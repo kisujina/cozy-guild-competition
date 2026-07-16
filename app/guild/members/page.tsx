@@ -166,7 +166,7 @@ export default function MemberManagePage() {
 
       <div className="px-4 flex-1">
         <div className="flex flex-col gap-3 mb-6">
-          <button onClick={() => router.push('/guild/members/create')} className="w-full py-4 bg-lime-700 text-white font-black text-xl rounded-2xl">
+          <button onClick={() => router.push('/guild/members/create')} className="w-full py-4 bg-yellow-500 text-white font-black text-xl rounded-2xl">
             👥 뉴비 등록하기
           </button>
           
@@ -289,10 +289,10 @@ export default function MemberManagePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-base font-black">
-          <button onClick={handleUpdate} className="py-4 bg-lime-700 text-white rounded-2xl">수정</button>
+        <div className="grid grid-cols-2 gap-2 text-base font-black">
+          <button onClick={handleUpdate} className="py-4 bg-lime-700 text-white rounded-2xl">길드원 수정</button>
           <button onClick={handleDelete} className="py-4 bg-red-600 text-white rounded-2xl">삭제</button>
-          <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 rounded-2xl">홈으로</button>
+          {/* <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 rounded-2xl">홈으로</button> */}
         </div>
       </div>
     </div>

@@ -187,10 +187,10 @@ export default function FlowerManagePage() {
         </div>
 
         {/* 액션 제어 */}
-        <div className="grid grid-cols-3 gap-2">
-          <button onClick={handleUpdate} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-lg">수정</button>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={handleUpdate} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-lg">꽃 정보 수정</button>
           <button onClick={handleDelete} className="py-4 bg-red-600 text-white rounded-2xl font-black text-lg">삭제</button>
-          <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-amber-900 rounded-2xl font-black text-lg">홈으로</button>
+          {/* <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-amber-900 rounded-2xl font-black text-lg">홈으로</button> */}
         </div>
       </div>
     </div>

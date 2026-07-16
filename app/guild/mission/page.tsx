@@ -203,7 +203,7 @@ export default function MissionSettingPage() {
 
         {/* 기본 임무 진행 여부 */}
         <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
-          <label className="block text-xl font-extrabold mb-3">📋 임무 진행 제한 방식</label>
+          <label className="block text-xl font-extrabold mb-3">📋 기본 임무만 진행 하시나요?</label>
           <div className="grid grid-cols-2 gap-3">
             {['Y', 'N'].map((b) => (
               <label key={b} className={`flex items-center justify-center py-3 border-2 rounded-xl cursor-pointer font-black text-lg ${
@@ -224,13 +224,13 @@ export default function MissionSettingPage() {
         </div>
 
         {/* 서브밋 버튼 */}
-        <div className="grid grid-cols-2 gap-3 pt-4">
+        <div className="grid grid-cols-1 gap-3 pt-4">
           <button onClick={handleRegister} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-xl hover:bg-lime-800">
-            등록
+            임무 정보 등록
           </button>
-          <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-[#78350F] rounded-2xl font-black text-xl hover:bg-amber-300">
+          {/* <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-[#78350F] rounded-2xl font-black text-xl hover:bg-amber-300">
             홈으로
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

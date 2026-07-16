@@ -31,7 +31,6 @@ export default function FlowerSelectPage() {
     loadUserOwnedFlowers(curUser.id);
   }, []);
 
-  // 등급이나 검색어가 바뀔 때 첫 페이지로 리셋하며 목록 새로 로드
   useEffect(() => {
     if (user) {
       fetchFlowers(1);
@@ -66,16 +65,14 @@ export default function FlowerSelectPage() {
 
     const { data, count } = await query;
     if (data) {
-      // 해당 등급의 정렬 처리: 해당 유저가 "보유중"인 꽃이 위로 정렬되게 구성
       const sortedData = [...data].sort((a, b) => {
         const aOwned = checkedMap[a.id] ? 1 : 0;
         const bOwned = checkedMap[b.id] ? 1 : 0;
-        return bOwned - aOwned; // 내림차순 정렬 (보유가 앞쪽에 배치)
+        return bOwned - aOwned;
       });
 
       setGradeCount(count || 0);
       setTotalCount(count || 0);
-      // 클라이언트 단 페이징 슬라이싱 적용
       setFlowers(sortedData.slice((targetPage - 1) * limit, targetPage * limit));
       setPage(targetPage);
     }
@@ -88,14 +85,21 @@ export default function FlowerSelectPage() {
     }));
   };
 
+  // 전체 선택/해제 핸들러
+  const handleToggleAll = (checked: boolean) => {
+    const newCheckedMap = { ...checkedMap };
+    flowers.forEach((f) => {
+      newCheckedMap[f.id] = checked;
+    });
+    setCheckedMap(newCheckedMap);
+  };
+
   const handleSave = async () => {
     if (!user) return;
 
-    // 전체 꽃 도감 목록 불러오기
     const { data: allFlowerList } = await supabase.from('flowers').select('id');
     if (!allFlowerList) return;
 
-    // Upsert를 위한 데이터 정비
     const upsertPayload = allFlowerList.map((f) => ({
       user_id: user.id,
       flower_id: f.id,
@@ -112,12 +116,14 @@ export default function FlowerSelectPage() {
     }
   };
 
+  // 현재 페이지의 꽃들이 모두 체크되어 있는지 확인
+  const isAllPageChecked = flowers.length > 0 && flowers.every(f => checkedMap[f.id]);
+
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12">
       <Header />
 
       <div className="px-4 flex-1">
-        {/* 등급 선택 라디오 및 서치 패널 */}
         <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm mb-6">
           <label className="block text-lg font-extrabold mb-2">등급 필터</label>
           <div className="grid grid-cols-5 gap-1.5 mb-4">
@@ -147,18 +153,23 @@ export default function FlowerSelectPage() {
             <button onClick={() => fetchFlowers(1)} className="bg-lime-700 text-white px-4 rounded-xl font-extrabold">검색</button>
           </div>
 
-          {/* 꽃 수량 소형 스티커 표기 */}
           <p className="text-right text-xs font-black text-lime-700 mt-2.5">
             해당 등급의 꽃: {gradeCount}개 / 모든 등급의 꽃: {allCount}개
           </p>
         </div>
 
-        {/* 꽃 선택 테이블 */}
         <div className="bg-white rounded-2xl border-2 border-amber-100 shadow-sm overflow-hidden mb-6">
           <table className="w-full text-center">
             <thead>
               <tr className="bg-amber-50 text-sm font-black text-amber-900 border-b border-amber-100">
-                <th className="py-3 px-1">체크</th>
+                <th className="py-3 px-1">
+                  <input 
+                    type="checkbox" 
+                    checked={isAllPageChecked}
+                    onChange={(e) => handleToggleAll(e.target.checked)}
+                    className="w-5 h-5 accent-lime-700"
+                  />
+                </th>
                 <th className="py-3 px-1">등급</th>
                 <th className="py-3 px-1">꽃 이름</th>
                 <th className="py-3 px-1">보유</th>
@@ -190,7 +201,6 @@ export default function FlowerSelectPage() {
             </tbody>
           </table>
 
-          {/* 페이징 패널 */}
           <div className="flex justify-between items-center p-3.5 bg-amber-50">
             <button 
               disabled={page === 1}
@@ -210,11 +220,10 @@ export default function FlowerSelectPage() {
           </div>
         </div>
 
-        {/* 바텀 컨트롤 바 */}
-        <div className="grid grid-cols-3 gap-2">
-          <button onClick={handleSave} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-lg">등록</button>
-          <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-[#78350F] rounded-2xl font-black text-lg">돌아가기</button>
-          <button onClick={() => router.push('/guild/mission')} className="py-4 bg-amber-100 text-[#78350F] rounded-2xl font-black text-lg">임무 설정</button>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={handleSave} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-lg">보유 꽃 수정하기</button>
+          {/* <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-[#78350F] rounded-2xl font-black text-lg">돌아가기</button> */}
+          <button onClick={() => router.push('/guild/mission')} className="py-4 bg-amber-100 text-[#78350F] rounded-2xl font-black text-lg">임무 설정 페이지로</button>
         </div>
       </div>
     </div>

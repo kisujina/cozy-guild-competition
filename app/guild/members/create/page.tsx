@@ -85,7 +85,7 @@ export default function CreateMemberPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <button onClick={handleRegister} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-lg">등록</button>
+          <button onClick={handleRegister} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-lg">뉴비 등록</button>
           <button onClick={() => router.push('/guild/members')} className="py-4 bg-amber-200 rounded-2xl font-black text-lg">취소</button>
         </div>
       </div>
