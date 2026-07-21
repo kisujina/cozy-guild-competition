@@ -160,13 +160,26 @@ export default function MemberManagePage() {
   const totalPages = Math.ceil(members.length / limit) || 1;
   const pagedMembers = members.slice((page - 1) * limit, page * limit);
 
+  // 🛠️ 현재 페이지의 모든 항목이 선택되었는지 확인
+  const isAllPageChecked = pagedMembers.length > 0 && pagedMembers.every((m) => selectedIds[m.id]);
+
+  // 🛠️ 현재 페이지 전체 선택/해제 핸들러
+  const handleToggleAll = (checked: boolean) => {
+    const newSelectedIds = { ...selectedIds };
+    pagedMembers.forEach((m) => {
+      newSelectedIds[m.id] = checked;
+    });
+    setSelectedIds(newSelectedIds);
+  };
+
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12">
       <Header />
 
       <div className="px-4 flex-1">
+        <p className="text-md font-bold text-blue-500">❣️새로운 멤버 등록 시 [뉴비 등록하기]를 눌러서 등록합니다. </p>
         <div className="flex flex-col gap-3 mb-6">
-          <button onClick={() => router.push('/guild/members/create')} className="w-full py-4 bg-yellow-500 text-white font-black text-xl rounded-2xl">
+          <button onClick={() => router.push('/guild/members/create')} className="w-full py-4 bg-sky-500 text-white font-black text-xl rounded-2xl hover:bg-sky-600 transition-colors">
             👥 뉴비 등록하기
           </button>
           
@@ -183,25 +196,32 @@ export default function MemberManagePage() {
                 setPage(1); // 검색 시 안전하게 1페이지부터 결과 노출
                 fetchMembers();
               }} 
-              className="bg-lime-700 text-white px-5 rounded-xl font-bold"
+              className="bg-lime-700 text-white px-5 rounded-xl font-bold hover:bg-lime-800 transition-colors"
             >
               검색
             </button>
           </div>
         </div>
-
+        <p className="text-sm font-bold text-red-500">체크박스 선택 후에 삭제/수정 버튼을 눌러야 정보가 저장됩니다. </p>
         {/* 멤버 테이블 */}
         <div className="bg-white rounded-2xl border-2 border-amber-100 shadow-sm overflow-hidden mb-6 text-xs font-bold">
           <div className="overflow-x-auto">
             <table className="w-full text-center min-w-[420px]">
               <thead>
                 <tr className="bg-amber-50 text-amber-900 border-b border-amber-100 font-extrabold h-10 text-sm">
-                  <th className="px-1">선택</th>
+                  <th className="px-1">
+                    <input 
+                      type="checkbox" 
+                      checked={isAllPageChecked}
+                      onChange={(e) => handleToggleAll(e.target.checked)}
+                      className="w-5 h-5 accent-lime-700 cursor-pointer"
+                    />
+                  </th>
                   <th className="px-1">직급</th>
                   <th className="px-1">닉네임</th>
-                  <th className="px-1">기본임무</th>
+                  <th className="px-1">기본임무만</th>
                   <th className="px-1">VIP</th>
-                  <th className="px-1">완료수</th>
+                  <th className="px-1">완료횟수</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
@@ -290,9 +310,8 @@ export default function MemberManagePage() {
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-base font-black">
-          <button onClick={handleUpdate} className="py-4 bg-lime-700 text-white rounded-2xl">길드원 수정</button>
-          <button onClick={handleDelete} className="py-4 bg-red-600 text-white rounded-2xl">삭제</button>
-          {/* <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 rounded-2xl">홈으로</button> */}
+          <button onClick={handleDelete} className="py-4 bg-red-600 text-white rounded-2xl">탈퇴/추방 길드원 삭제</button>
+          <button onClick={handleUpdate} className="py-4 bg-lime-700 text-white rounded-2xl">길드원 정보 수정하기</button>
         </div>
       </div>
     </div>

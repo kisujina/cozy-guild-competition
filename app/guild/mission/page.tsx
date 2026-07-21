@@ -129,10 +129,10 @@ export default function MissionSettingPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12">
       <Header />
-
-      <div className="px-4 flex-1 space-y-6">
+      <p className="p-2 border-0 text-md font-bold text-red-500">※임무 삭제 시 필수 정보이니, 꼭 입력 부탁드립니다. </p>
+      <div className="px-3 flex-1 space-y-6">
         {/* 길드 랭크 */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
+        {/* <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
           <label className="block text-xl font-extrabold mb-3">🏅 길드 랭크 (기본값: A)</label>
           <div className="grid grid-cols-4 gap-2">
             {['A', 'B', 'C', 'D'].map((r) => (
@@ -152,35 +152,18 @@ export default function MissionSettingPage() {
               </label>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* 자동 매핑 기본 임무 횟수 */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
+        {/* <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
           <label className="block text-lg font-extrabold mb-1">🎯 매칭 기본 임무 횟수</label>
           <div className="p-4 bg-amber-50 rounded-xl text-center border border-amber-200">
             <span className="text-3xl font-black text-lime-700">{maxMissions}</span>
             <span className="text-lg font-bold"> 회</span>
           </div>
-        </div>
-
-        {/* 완료한 임무 횟수 직접 기입 영역 */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
-          <label className="block text-xl font-extrabold mb-3">⚔️ 내가 완료한 임무 개수</label>
-          <div className="flex items-center gap-3 bg-amber-50/40 p-4 rounded-xl border border-amber-100">
-            <input 
-              type="number" 
-              min="0" 
-              max={maxMissions}
-              value={completedMissions}
-              onChange={(e) => setCompletedMissions(Number(e.target.value))}
-              className="w-24 p-3 text-center text-xl font-black border-2 border-amber-200 rounded-xl focus:outline-none focus:border-lime-700 bg-white"
-            />
-            <span className="text-lg font-bold text-amber-900"> / {maxMissions} 회 완료함</span>
-          </div>
-        </div>
-
+        </div> */}
         {/* VIP 여부 설정 */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
+        <div className="bg-white p-2 rounded-2xl border-2 border-amber-100 shadow-sm">
           <label className="block text-xl font-extrabold mb-3">⭐ VIP 여부</label>
           <div className="grid grid-cols-2 gap-3">
             {['Y', 'N'].map((v) => (
@@ -200,9 +183,9 @@ export default function MissionSettingPage() {
             ))}
           </div>
         </div>
-
+        
         {/* 기본 임무 진행 여부 */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
+        <div className="bg-white p-2 rounded-2xl border-2 border-amber-100 shadow-sm">
           <label className="block text-xl font-extrabold mb-3">📋 기본 임무만 진행 하시나요?</label>
           <div className="grid grid-cols-2 gap-3">
             {['Y', 'N'].map((b) => (
@@ -223,10 +206,26 @@ export default function MissionSettingPage() {
           </div>
         </div>
 
+        {/* 완료한 임무 횟수 직접 기입 영역 */}
+        <div className="bg-white p-2 rounded-2xl border-2 border-amber-100 shadow-sm">
+          <label className="block text-xl font-extrabold mb-3">⚔️ 내가 완료한 임무 개수</label>
+          <div className="flex items-center gap-3 bg-amber-50/40 p-4 rounded-xl border border-amber-100">
+          
+            <span className="text-lg font-bold text-amber-900">총 {basicOnly=='Y'? maxMissions : maxMissions+6 }회 중 <input 
+              type="number" 
+              min="0" 
+              max={maxMissions}
+              value={completedMissions}
+              onChange={(e) => setCompletedMissions(Number(e.target.value))}
+              className="w-24 p-2 text-center text-xl font-black border-2 border-amber-200 rounded-xl focus:outline-none focus:border-lime-700 bg-white"
+            /> 회 완료 </span>
+          </div>
+        </div>
+
         {/* 서브밋 버튼 */}
         <div className="grid grid-cols-1 gap-3 pt-4">
-          <button onClick={handleRegister} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-xl hover:bg-lime-800">
-            임무 정보 등록
+          <button onClick={handleRegister} className="py-4 bg-blue-500 text-white rounded-2xl font-black text-xl hover:bg-blue-800">
+            임무 정보 수정
           </button>
           {/* <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-[#78350F] rounded-2xl font-black text-xl hover:bg-amber-300">
             홈으로

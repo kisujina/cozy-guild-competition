@@ -107,13 +107,11 @@ export default function ListPage() {
       // 🌟 [핵심 로직]: 기획하신 조건대로 필터링
       const filteredData = data.filter((item: any) => {
         const p = item.profiles;
-        /*
-        // is_basic_only가 'N'이면 무조건 통과
-        if (p.is_basic_only === 'N') return true;
         
-        // is_basic_only가 'Y'이면 완료 횟수가 maxMissions 미만인 경우만 통과
-        return p.completed_missions < maxMissions;
-        */
+        // is_basic_only가 'Y'이면 길드 랭크에 따른 최대 임무 횟수 (기본) 미만인 사람만 남김
+        if (p.is_basic_only === 'Y') return p.completed_missions < maxMissions;
+        
+        
        //추가 임무 +6 까지 추가. 추가 임무 모두 달성 시에 조회 되지 않도록 처리.
         const limitWithExtra = maxMissions + 6; // 기본횟수 + 6 (풀 임무 완료 기준)
         
@@ -156,6 +154,7 @@ export default function ListPage() {
             </>
           )}
         </div>
+        <p className="flex-1 p-4 border-0 border-amber-200 rounded-2xl text-md font-bold text-red-500">❣️현재 해당 꽃으로 미션이 가능한 멤버들만 노출됩니다. </p>
         <div className="flex gap-2 mb-6">
           <input 
             type="text" 
@@ -191,11 +190,9 @@ export default function ListPage() {
               <table className="w-full text-center">
                 <thead>
                   <tr className="bg-amber-50 text-sm font-black border-b border-amber-100 text-amber-900">
-                    <th className="py-3 px-1">순번</th>
-                    <th className="py-3 px-1">닉네임</th>
-                    <th className="py-3 px-1">기본임무</th>
-                    <th className="py-3 px-1">VIP</th>
-                    <th className="py-3 px-1">완료수</th>
+                    <th className="py-4 px-3">순번</th>
+                    <th className="py-4 px-3">닉네임</th>
+                    <th className="py-4 px-3">VIP</th>
                   </tr>
                 </thead>
                 <tbody className="text-lg font-bold">
@@ -203,9 +200,7 @@ export default function ListPage() {
                     <tr key={m.seq} className="border-b border-amber-50 hover:bg-lime-50/20">
                       <td className="py-4 px-1 text-sm text-amber-800">{m.seq}</td>
                       <td className="py-4 px-1 font-black">{m.nickname}</td>
-                      <td className="py-4 px-1">{m.basic}</td>
-                      <td className="py-4 px-1">{m.vip}</td>
-                      <td className="py-4 px-1 text-lime-700">{m.completed}회</td>
+                      {m.vip=="N"?<td className="py-4 px-1 text-red-500">X</td>:<td className="py-4 px-1 text-blue-500">O</td>}
                     </tr>
                   ))}
                 </tbody>

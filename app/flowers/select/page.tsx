@@ -122,8 +122,10 @@ export default function FlowerSelectPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12">
       <Header />
-
       <div className="px-4 flex-1">
+        <p className="text-sm font-bold text-red-500">1️⃣꽃의 등급에 맞는 이름이 있어야 검색이 됩니다. </p>
+        <p className="text-sm font-bold text-red-500">2️⃣체크박스 선택 시 보유 꽃, 체크 박스 해제 시 미보유 꽃이 됩니다. </p>
+        <p className="text-sm font-bold text-red-500">3️⃣체크박스 선택 후에 수정 버튼을 눌러야 정보가 저장됩니다. </p>
         <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm mb-6">
           <label className="block text-lg font-extrabold mb-2">등급 필터</label>
           <div className="grid grid-cols-5 gap-1.5 mb-4">
@@ -220,10 +222,10 @@ export default function FlowerSelectPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={handleSave} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-lg">보유 꽃 수정하기</button>
+        <div className="grid grid-cols-1 gap-1">
+          <button onClick={handleSave} className="py-3 bg-blue-500 text-white font-black rounded-2xl text-lg hover:bg-blue-800">보유 꽃 수정하기</button>
           {/* <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-[#78350F] rounded-2xl font-black text-lg">돌아가기</button> */}
-          <button onClick={() => router.push('/guild/mission')} className="py-4 bg-amber-100 text-[#78350F] rounded-2xl font-black text-lg">임무 설정 페이지로</button>
+          {/* <button onClick={() => router.push('/guild/mission')} className="py-4 bg-amber-100 text-[#78350F] rounded-2xl font-black text-lg">임무 설정 페이지로</button> */}
         </div>
       </div>
     </div>

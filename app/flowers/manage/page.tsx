@@ -118,8 +118,9 @@ export default function FlowerManagePage() {
       <Header />
 
       <div className="px-4 flex-1">
+        <p className="p-2 border-0 text-sm font-bold text-blue-500">❣️새로운 꽃을 등록할 경우, [신규 꽃 등록하기]버튼을 눌러주세요. </p>
         <div className="flex flex-col gap-3 mb-6">
-          <button onClick={() => router.push('/flowers/create')} className="w-full py-4 bg-lime-700 text-white font-black text-xl rounded-2xl">
+          <button onClick={() => router.push('/flowers/create')} className="w-full py-4 bg-blue-700 text-white font-black text-xl rounded-2xl">
             🌱 신규 꽃 등록하기
           </button>
           
@@ -136,6 +137,7 @@ export default function FlowerManagePage() {
         </div>
 
         {/* 꽃 설정 테이블 */}
+        <p className="text-sm font-bold text-red-600">체크박스 선택 후에 삭제/수정 버튼을 눌러야 정보가 저장됩니다. </p>
         <div className="bg-white rounded-2xl border-2 border-amber-100 shadow-sm overflow-hidden mb-6">
           <table className="w-full text-center">
             <thead>
@@ -188,8 +190,8 @@ export default function FlowerManagePage() {
 
         {/* 액션 제어 */}
         <div className="grid grid-cols-2 gap-2">
-          <button onClick={handleUpdate} className="py-4 bg-lime-700 text-white rounded-2xl font-black text-lg">꽃 정보 수정</button>
-          <button onClick={handleDelete} className="py-4 bg-red-600 text-white rounded-2xl font-black text-lg">삭제</button>
+          <button onClick={handleDelete} className="py-4 bg-red-600 text-white rounded-2xl font-black text-lg">꽃 정보 삭제</button>
+          <button onClick={handleUpdate} className="py-4 bg-blue-500 text-white rounded-2xl font-black text-lg">꽃 정보 수정</button>
           {/* <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-amber-900 rounded-2xl font-black text-lg">홈으로</button> */}
         </div>
       </div>
