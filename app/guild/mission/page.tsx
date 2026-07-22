@@ -7,13 +7,12 @@ import Header from '@/components/Header';
 export default function MissionSettingPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [guildRank, setGuildRank] = useState('A'); // 기본값 'A'
+  const [guildRank, setGuildRank] = useState('A'); 
   const [vip, setVip] = useState('N');
   const [basicOnly, setBasicOnly] = useState('Y');
   
-  // 내가 완료한 임무 개수 상태 관리
   const [completedMissions, setCompletedMissions] = useState<number>(0);
-  const [loading, setLoading] = useState(true); // 초기 로딩 상태 관리 추가
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const session = sessionStorage.getItem('guild_user');
@@ -24,17 +23,14 @@ export default function MissionSettingPage() {
     const curUser = JSON.parse(session);
     setUser(curUser);
     
-    // DB 및 세션에 따라 boolean 타입과 string 타입을 유연하게 맞춰서 매핑시킵니다.
     setVip(curUser.is_vip === true || curUser.is_vip === 'Y' ? 'Y' : 'N');
     setBasicOnly(curUser.is_basic_only === true || curUser.is_basic_only === 'Y' ? 'Y' : 'N');
     
-    // 비동기 state 지연 방지를 위해 curUser.id를 직접 전달
     fetchMyMissionData(curUser.id);
     fetchGuildSetting();
     setLoading(false);
   }, []);
 
-  // DB로부터 완료 임무 횟수 안전하게 한 번 더 받아오기
   const fetchMyMissionData = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
@@ -59,7 +55,6 @@ export default function MissionSettingPage() {
   const maxMissions = getMissionCount(guildRank);
 
   const handleRegister = async () => {
-    // 💡 세션 혹은 상태값에서 유저 정보를 확실하게 확보합니다.
     const session = sessionStorage.getItem('guild_user');
     const currentUser = user || (session ? JSON.parse(session) : null);
 
@@ -69,30 +64,28 @@ export default function MissionSettingPage() {
       return;
     }
 
-    // 밸리데이션 체크
     if (completedMissions < 0) {
       alert('완료한 임무 개수는 0개 이상이어야 합니다.');
       return;
     }
-    if (completedMissions > maxMissions) {
-      alert(`현재 길드 등급의 최대 임무 횟수(${maxMissions}회)를 초과하여 등록할 수 없습니다.`);
+    
+    const limitCount = basicOnly === 'Y' ? maxMissions : maxMissions + 6;
+    if (completedMissions > limitCount) {
+      alert(`선택하신 임무 조건의 최대 횟수(${limitCount}회)를 초과하여 등록할 수 없습니다.`);
       return;
     }
 
     try {
-      // 1. 길드장/부길드장이면 길드 랭크 변경 가능하도록 업데이트 진행
       const isLeader = currentUser.role === '길드장' || currentUser.role === '부길드장';
       if (isLeader) {
         await supabase.from('guild_settings').update({ guild_rank: guildRank }).eq('id', 1);
       }
 
-      // 2. 유저 본인의 VIP 여부, 기본 임무만 진행 여부 및 완료 임무 횟수(completed_missions) 업데이트
-      // DB 스키마에 따라 boolean 또는 string 모두 매핑 가능하도록 안전하게 작성합니다.
       const { error } = await supabase
         .from('profiles')
         .update({
-          is_vip: vip, // 혹은 DB 타입이 boolean이면: vip === 'Y'
-          is_basic_only: basicOnly, // 혹은 DB 타입이 boolean이면: basicOnly === 'Y'
+          is_vip: vip,
+          is_basic_only: basicOnly,
           completed_missions: completedMissions,
         })
         .eq('id', currentUser.id);
@@ -103,7 +96,6 @@ export default function MissionSettingPage() {
         return;
       }
 
-      // 수정 이후 바뀐 세션 동기화
       const updatedUser = { 
         ...currentUser, 
         is_vip: vip, 
@@ -121,54 +113,27 @@ export default function MissionSettingPage() {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-bold">로딩 중...</div>;
+    return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-bold text-sm">로딩 중...</div>;
   }
 
-  const isLeader = user?.role === '길드장' || user?.role === '부길드장';
-
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12">
+    <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12 overflow-x-hidden box-border">
       <Header />
-      <p className="p-2 border-0 text-md font-bold text-red-500">※임무 삭제 시 필수 정보이니, 꼭 입력 부탁드립니다. </p>
-      <div className="px-3 flex-1 space-y-6">
-        {/* 길드 랭크 */}
-        {/* <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
-          <label className="block text-xl font-extrabold mb-3">🏅 길드 랭크 (기본값: A)</label>
-          <div className="grid grid-cols-4 gap-2">
-            {['A', 'B', 'C', 'D'].map((r) => (
-              <label key={r} className={`flex items-center justify-center py-3 border-2 rounded-xl cursor-pointer font-black text-lg ${
-                !isLeader ? 'opacity-50 cursor-not-allowed' : ''
-              } ${guildRank === r ? 'bg-lime-50 border-lime-600' : 'bg-amber-50 border-amber-200'}`}>
-                <input 
-                  type="radio" 
-                  name="guildRank" 
-                  value={r} 
-                  checked={guildRank === r}
-                  disabled={!isLeader}
-                  onChange={(e) => setGuildRank(e.target.value)}
-                  className="hidden"
-                />
-                <span>{r} 랭크</span>
-              </label>
-            ))}
-          </div>
-        </div> */}
+      
+      <div className="px-4 pt-2">
+        <p className="p-2 text-xs font-bold text-red-500 bg-red-50 rounded-xl border border-red-100 mb-4">
+          ※ 임무 삭제 시 필수 정보이니, 꼭 입력 부탁드립니다.
+        </p>
+      </div>
 
-        {/* 자동 매핑 기본 임무 횟수 */}
-        {/* <div className="bg-white p-5 rounded-2xl border-2 border-amber-100 shadow-sm">
-          <label className="block text-lg font-extrabold mb-1">🎯 매칭 기본 임무 횟수</label>
-          <div className="p-4 bg-amber-50 rounded-xl text-center border border-amber-200">
-            <span className="text-3xl font-black text-lime-700">{maxMissions}</span>
-            <span className="text-lg font-bold"> 회</span>
-          </div>
-        </div> */}
+      <div className="px-4 flex-1 space-y-4 w-full box-border">
         {/* VIP 여부 설정 */}
-        <div className="bg-white p-2 rounded-2xl border-2 border-amber-100 shadow-sm">
-          <label className="block text-xl font-extrabold mb-3">⭐ VIP 여부</label>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm">
+          <label className="block text-base font-extrabold mb-2.5">⭐ VIP 여부</label>
+          <div className="grid grid-cols-2 gap-2">
             {['Y', 'N'].map((v) => (
-              <label key={v} className={`flex items-center justify-center py-3 border-2 rounded-xl cursor-pointer font-black text-lg ${
-                vip === v ? 'bg-lime-50 border-lime-600' : 'bg-amber-50 border-amber-200'
+              <label key={v} className={`flex items-center justify-center py-3 border-2 rounded-xl cursor-pointer font-bold text-base transition-colors ${
+                vip === v ? 'bg-lime-50 border-lime-600 text-lime-900' : 'bg-amber-50/50 border-amber-200 text-amber-800'
               }`}>
                 <input 
                   type="radio" 
@@ -176,7 +141,7 @@ export default function MissionSettingPage() {
                   value={v} 
                   checked={vip === v}
                   onChange={(e) => setVip(e.target.value)}
-                  className="mr-2 accent-lime-700"
+                  className="mr-2 accent-lime-700 w-4 h-4"
                 />
                 <span>{v === 'Y' ? 'VIP 유저' : '일반'}</span>
               </label>
@@ -185,12 +150,12 @@ export default function MissionSettingPage() {
         </div>
         
         {/* 기본 임무 진행 여부 */}
-        <div className="bg-white p-2 rounded-2xl border-2 border-amber-100 shadow-sm">
-          <label className="block text-xl font-extrabold mb-3">📋 기본 임무만 진행 하시나요?</label>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm">
+          <label className="block text-base font-extrabold mb-2.5">📋 기본 임무({maxMissions}회)만 진행 하나요?</label>
+          <div className="grid grid-cols-2 gap-2">
             {['Y', 'N'].map((b) => (
-              <label key={b} className={`flex items-center justify-center py-3 border-2 rounded-xl cursor-pointer font-black text-lg ${
-                basicOnly === b ? 'bg-lime-50 border-lime-600' : 'bg-amber-50 border-amber-200'
+              <label key={b} className={`flex items-center justify-center py-3 border-2 rounded-xl cursor-pointer font-bold text-base transition-colors ${
+                basicOnly === b ? 'bg-lime-50 border-lime-600 text-lime-900' : 'bg-amber-50/50 border-amber-200 text-amber-800'
               }`}>
                 <input 
                   type="radio" 
@@ -198,7 +163,7 @@ export default function MissionSettingPage() {
                   value={b} 
                   checked={basicOnly === b}
                   onChange={(e) => setBasicOnly(e.target.value)}
-                  className="mr-2 accent-lime-700"
+                  className="mr-2 accent-lime-700 w-4 h-4"
                 />
                 <span>{b === 'Y' ? '기본 임무만' : '추가 임무까지'}</span>
               </label>
@@ -207,29 +172,31 @@ export default function MissionSettingPage() {
         </div>
 
         {/* 완료한 임무 횟수 직접 기입 영역 */}
-        <div className="bg-white p-2 rounded-2xl border-2 border-amber-100 shadow-sm">
-          <label className="block text-xl font-extrabold mb-3">⚔️ 내가 완료한 임무 개수</label>
-          <div className="flex items-center gap-3 bg-amber-50/40 p-4 rounded-xl border border-amber-100">
-          
-            <span className="text-lg font-bold text-amber-900">총 {basicOnly=='Y'? maxMissions : maxMissions+6 }회 중 <input 
-              type="number" 
-              min="0" 
-              max={maxMissions}
-              value={completedMissions}
-              onChange={(e) => setCompletedMissions(Number(e.target.value))}
-              className="w-24 p-2 text-center text-xl font-black border-2 border-amber-200 rounded-xl focus:outline-none focus:border-lime-700 bg-white"
-            /> 회 완료 </span>
+        <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm">
+          <label className="block text-base font-extrabold mb-2.5">⚔️ 내가 완료한 임무 개수</label>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 bg-amber-50/60 p-3.5 rounded-xl border border-amber-200">
+            <span className="text-sm font-bold text-amber-900">
+              총 {basicOnly === 'Y' ? maxMissions : maxMissions + 6}회 중
+            </span>
+            <div className="flex items-center gap-1.5">
+              <input 
+                type="number" 
+                min="0" 
+                max={basicOnly === 'Y' ? maxMissions : maxMissions + 6}
+                value={completedMissions}
+                onChange={(e) => setCompletedMissions(Number(e.target.value))}
+                className="w-20 p-2 text-center text-lg font-black border-2 border-amber-300 rounded-xl focus:outline-none focus:border-lime-700 bg-white"
+              />
+              <span className="text-sm font-extrabold text-amber-900">회 완료</span>
+            </div>
           </div>
         </div>
 
         {/* 서브밋 버튼 */}
-        <div className="grid grid-cols-1 gap-3 pt-4">
-          <button onClick={handleRegister} className="py-4 bg-blue-500 text-white rounded-2xl font-black text-xl hover:bg-blue-800">
-            임무 정보 수정
+        <div className="pt-2">
+          <button onClick={handleRegister} className="w-full py-4 bg-blue-500 text-white rounded-2xl font-black text-lg hover:bg-blue-600 transition-colors shadow-sm">
+            임무 정보 수정 완료
           </button>
-          {/* <button onClick={() => router.push('/list')} className="py-4 bg-amber-200 text-[#78350F] rounded-2xl font-black text-xl hover:bg-amber-300">
-            홈으로
-          </button> */}
         </div>
       </div>
     </div>

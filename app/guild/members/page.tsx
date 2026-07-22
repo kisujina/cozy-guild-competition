@@ -7,14 +7,13 @@ import Header from '@/components/Header';
 export default function MemberManagePage() {
   const router = useRouter();
   const [searchWord, setSearchWord] = useState('');
-  const [members, setMembers] = useState<any[]>([]); // 정렬 완료된 전체 멤버 리스트
-  const [page, setPage] = useState(1); // 현재 페이지 상태
+  const [members, setMembers] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
 
-  // 수정 정보 추적 버퍼 테이블
   const [localData, setLocalData] = useState<Record<string, { role: string; nickname: string; basic: string; vip: string; completed: number }>>({});
   
-  const limit = 10; // 한 페이지에 보여줄 길드원 수
+  const limit = 10;
 
   useEffect(() => {
     const session = sessionStorage.getItem('guild_user');
@@ -31,7 +30,6 @@ export default function MemberManagePage() {
     fetchMembers();
   }, []);
 
-  // 🛠️ 직급별 정렬 우선순위 정의 (숫자가 작을수록 화면 상단에 노출)
   const rolePriority: Record<string, number> = {
     '길드장': 1,
     '부길드장': 2,
@@ -40,7 +38,6 @@ export default function MemberManagePage() {
     '멤버': 5
   };
 
-  // 🛠️ 쿼리 방식: 전체를 받아와 클라이언트 단에서 정렬
   const fetchMembers = async () => {
     let query = supabase.from('profiles').select('*');
     if (searchWord.trim()) {
@@ -55,20 +52,18 @@ export default function MemberManagePage() {
     }
 
     if (data) {
-      // 🛠️ 가져온 전체 목록을 직급 가중치 순서로 우선 정렬 후, 동일 직급은 가나다순으로 정렬
       const sortedMembers = [...data].sort((a, b) => {
         const priorityA = rolePriority[a.role] || 99;
         const priorityB = rolePriority[b.role] || 99;
 
         if (priorityA !== priorityB) {
-          return priorityA - priorityB; // 1차 정렬: 직급 순
+          return priorityA - priorityB;
         }
-        return a.nickname.localeCompare(b.nickname, 'ko'); // 2차 정렬: 닉네임 가나다순
+        return a.nickname.localeCompare(b.nickname, 'ko');
       });
 
       setMembers(sortedMembers);
 
-      // 로컬 수정 버퍼 초기화
       const buffer: any = {};
       sortedMembers.forEach((m) => {
         buffer[m.id] = {
@@ -90,7 +85,6 @@ export default function MemberManagePage() {
       return;
     }
 
-    // 수정 유효성 분석
     for (const id of activeIds) {
       const original = members.find((m) => m.id === id);
       const edited = localData[id];
@@ -130,8 +124,6 @@ export default function MemberManagePage() {
 
     alert('수정되었습니다.');
     setSelectedIds({});
-    
-    // 🛠️ 수정 후 최신 데이터를 다시 로드하여 완벽하게 재정렬된 상태 유지
     fetchMembers();
   };
 
@@ -150,20 +142,17 @@ export default function MemberManagePage() {
       if (!error) {
         alert('성공적으로 삭제되었습니다.');
         setSelectedIds({});
-        setPage(1); // 삭제 후 안전하게 1페이지로 귀환
+        setPage(1);
         fetchMembers();
       }
     }
   };
 
-  // 🛠️ [페이징 계산 핵심] 전체 리스트(members)에서 현재 페이지 범위에 맞게 데이터를 10개씩 자릅니다.
   const totalPages = Math.ceil(members.length / limit) || 1;
   const pagedMembers = members.slice((page - 1) * limit, page * limit);
 
-  // 🛠️ 현재 페이지의 모든 항목이 선택되었는지 확인
   const isAllPageChecked = pagedMembers.length > 0 && pagedMembers.every((m) => selectedIds[m.id]);
 
-  // 🛠️ 현재 페이지 전체 선택/해제 핸들러
   const handleToggleAll = (checked: boolean) => {
     const newSelectedIds = { ...selectedIds };
     pagedMembers.forEach((m) => {
@@ -173,145 +162,173 @@ export default function MemberManagePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12">
+    <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12 overflow-x-hidden box-border">
       <Header />
 
-      <div className="px-4 flex-1">
-        <p className="text-md font-bold text-blue-500">❣️새로운 멤버 등록 시 [뉴비 등록하기]를 눌러서 등록합니다. </p>
-        <div className="flex flex-col gap-3 mb-6">
-          <button onClick={() => router.push('/guild/members/create')} className="w-full py-4 bg-sky-500 text-white font-black text-xl rounded-2xl hover:bg-sky-600 transition-colors">
+      <div className="px-4 flex-1 space-y-4 w-full box-border pt-2">
+        {/* 상단 뉴비 등록 안내 카드 (다른 관리 페이지들과 스타일 통일) */}
+        <div className="bg-white p-3.5 rounded-2xl border-2 border-amber-100 shadow-sm space-y-2">
+          <p className="text-xs font-bold text-blue-600 flex items-center gap-1">
+            <span>❣️</span> 새로운 멤버 등록 시 아래 버튼을 눌러주세요.
+          </p>
+          <button 
+            onClick={() => router.push('/guild/members/create')} 
+            className="w-full py-3.5 bg-sky-500 text-white font-black text-base rounded-xl hover:bg-sky-600 transition-colors shadow-sm"
+          >
             👥 뉴비 등록하기
           </button>
-          
+        </div>
+
+        {/* 검색 영역 (메인 대시보드와 동일한 정사각형 돋보기 버튼 스타일 적용) */}
+        <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm space-y-2">
           <div className="flex gap-2">
             <input 
               type="text" 
               placeholder="길드원 닉네임 검색" 
               value={searchWord}
               onChange={(e) => setSearchWord(e.target.value)}
-              className="flex-1 p-3.5 border-2 border-amber-200 rounded-xl"
+              onKeyDown={(e) => { if (e.key === 'Enter') { setPage(1); fetchMembers(); } }}
+              className="flex-1 p-3.5 border-2 border-amber-200 rounded-2xl font-bold bg-white text-sm focus:outline-none focus:border-[#556B2F]"
             />
             <button 
               onClick={() => {
-                setPage(1); // 검색 시 안전하게 1페이지부터 결과 노출
+                setPage(1);
                 fetchMembers();
               }} 
-              className="bg-lime-700 text-white px-5 rounded-xl font-bold hover:bg-lime-800 transition-colors"
+              className="w-14 h-14 bg-[#556B2F] text-white rounded-2xl flex items-center justify-center hover:bg-[#445823] transition-colors shadow-sm shrink-0"
             >
-              검색
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </button>
           </div>
         </div>
-        <p className="text-sm font-bold text-red-500">체크박스 선택 후에 삭제/수정 버튼을 눌러야 정보가 저장됩니다. </p>
-        {/* 멤버 테이블 */}
-        <div className="bg-white rounded-2xl border-2 border-amber-100 shadow-sm overflow-hidden mb-6 text-xs font-bold">
-          <div className="overflow-x-auto">
-            <table className="w-full text-center min-w-[420px]">
-              <thead>
-                <tr className="bg-amber-50 text-amber-900 border-b border-amber-100 font-extrabold h-10 text-sm">
-                  <th className="px-1">
-                    <input 
-                      type="checkbox" 
-                      checked={isAllPageChecked}
-                      onChange={(e) => handleToggleAll(e.target.checked)}
-                      className="w-5 h-5 accent-lime-700 cursor-pointer"
-                    />
-                  </th>
-                  <th className="px-1">직급</th>
-                  <th className="px-1">닉네임</th>
-                  <th className="px-1">기본임무만</th>
-                  <th className="px-1">VIP</th>
-                  <th className="px-1">완료횟수</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                {/* 🛠️ 전체 리스트 대신 10개로 잘린 pagedMembers 배열을 돌려 화면을 그립니다. */}
-                {pagedMembers.map((m) => (
-                  <tr key={m.id} className="border-b border-amber-50 h-14">
-                    <td>
+
+        {/* 멤버 테이블 영역 */}
+        <div className="space-y-1.5">
+          <p className="text-xs font-bold text-red-500 px-1">
+            ❤️ 체크박스 선택 후에 삭제/수정 버튼을 눌러야 정보가 저장됩니다.
+          </p>
+          
+          <div className="bg-white rounded-2xl border-2 border-amber-100 shadow-sm overflow-hidden font-bold w-full">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-center table-fixed text-xs">
+                <thead>
+                  <tr className="bg-amber-50 text-amber-900 border-b border-amber-100 font-extrabold h-9">
+                    <th className="w-[10%] px-0.5">
                       <input 
                         type="checkbox" 
-                        checked={!!selectedIds[m.id]} 
-                        onChange={() => setSelectedIds({ ...selectedIds, [m.id]: !selectedIds[m.id] })}
-                        className="w-5 h-5 accent-lime-700"
+                        checked={isAllPageChecked}
+                        onChange={(e) => handleToggleAll(e.target.checked)}
+                        className="w-4 h-4 accent-[#556B2F] cursor-pointer"
                       />
-                    </td>
-                    <td>
-                      <select 
-                        value={localData[m.id]?.role || m.role} 
-                        onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], role: e.target.value } })}
-                        className="border border-amber-200 p-1 rounded-lg"
-                      >
-                        {['길드장', '부길드장', '임원', '정예', '멤버'].map((r) => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                    </td>
-                    <td>
-                      <input 
-                        type="text" 
-                        value={localData[m.id]?.nickname || ''} 
-                        onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], nickname: e.target.value } })}
-                        className="w-20 border-b border-dashed border-amber-300 px-1 text-center font-bold text-amber-900"
-                      />
-                    </td>
-                    <td>
-                      <select 
-                        value={localData[m.id]?.basic || m.is_basic_only} 
-                        onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], basic: e.target.value } })}
-                        className="border border-amber-200 p-1 rounded-lg"
-                      >
-                        <option value="Y">Y</option>
-                        <option value="N">N</option>
-                      </select>
-                    </td>
-                    <td>
-                      <select 
-                        value={localData[m.id]?.vip || m.is_vip} 
-                        onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], vip: e.target.value } })}
-                        className="border border-amber-200 p-1 rounded-lg"
-                      >
-                        <option value="Y">Y</option>
-                        <option value="N">N</option>
-                      </select>
-                    </td>
-                    <td>
-                      <input 
-                        type="number" 
-                        value={localData[m.id]?.completed ?? 0} 
-                        onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], completed: Number(e.target.value) } })}
-                        className="w-10 border border-amber-200 p-1 rounded-lg text-center"
-                      />
-                    </td>
+                    </th>
+                    <th className="w-[24%] px-0.5">직급</th>
+                    <th className="w-[28%] px-0.5">닉네임</th>
+                    <th className="w-[14%] px-0.5">기본</th>
+                    <th className="w-[12%] px-0.5">VIP</th>
+                    <th className="w-[12%] px-0.5">완료</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {pagedMembers.map((m) => (
+                    <tr key={m.id} className="border-b border-amber-50 h-12 hover:bg-lime-50/20">
+                      <td className="px-0.5">
+                        <input 
+                          type="checkbox" 
+                          checked={!!selectedIds[m.id]} 
+                          onChange={() => setSelectedIds({ ...selectedIds, [m.id]: !selectedIds[m.id] })}
+                          className="w-4 h-4 accent-[#556B2F] cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-0.5">
+                        <select 
+                          value={localData[m.id]?.role || m.role} 
+                          onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], role: e.target.value } })}
+                          className="w-full border border-amber-200 p-1 text-xs rounded-lg bg-white focus:outline-none focus:border-[#556B2F]"
+                        >
+                          {['길드장', '부길드장', '임원', '정예', '멤버'].map((r) => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-0.5">
+                        <input 
+                          type="text" 
+                          value={localData[m.id]?.nickname || ''} 
+                          onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], nickname: e.target.value } })}
+                          className="w-full border-b border-dashed border-amber-300 px-0.5 text-center text-xs font-bold text-amber-900 bg-transparent focus:outline-none focus:border-[#556B2F]"
+                        />
+                      </td>
+                      <td className="px-0.5">
+                        <select 
+                          value={localData[m.id]?.basic || m.is_basic_only} 
+                          onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], basic: e.target.value } })}
+                          className="w-full border border-amber-200 p-1 text-xs rounded-lg bg-white focus:outline-none focus:border-[#556B2F]"
+                        >
+                          <option value="Y">Y</option>
+                          <option value="N">N</option>
+                        </select>
+                      </td>
+                      <td className="px-0.5">
+                        <select 
+                          value={localData[m.id]?.vip || m.is_vip} 
+                          onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], vip: e.target.value } })}
+                          className="w-full border border-amber-200 p-1 text-xs rounded-lg bg-white focus:outline-none focus:border-[#556B2F]"
+                        >
+                          <option value="Y">Y</option>
+                          <option value="N">N</option>
+                        </select>
+                      </td>
+                      <td className="px-0.5">
+                        <input 
+                          type="number" 
+                          value={localData[m.id]?.completed ?? 0} 
+                          onChange={(e) => setLocalData({ ...localData, [m.id]: { ...localData[m.id], completed: Number(e.target.value) } })}
+                          className="w-full border border-amber-200 p-1 text-xs rounded-lg text-center bg-white focus:outline-none focus:border-[#556B2F]"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          {/* 🛠️ 페이지네이션 버튼 UI 컴포넌트 */}
-          <div className="flex justify-between items-center p-3 bg-amber-50">
-            <button 
-              disabled={page === 1} 
-              onClick={() => setPage(page - 1)} 
-              className="px-3 py-1 bg-white border-2 border-amber-200 rounded-xl disabled:opacity-50"
-            >
-              이전
-            </button>
-            <span className="text-amber-950 font-bold">
-              {page} / {totalPages} (총 {members.length}명)
-            </span>
-            <button 
-              disabled={page >= totalPages} 
-              onClick={() => setPage(page + 1)} 
-              className="px-3 py-1 bg-white border-2 border-amber-200 rounded-xl disabled:opacity-50"
-            >
-              다음
-            </button>
+            {/* 페이징 */}
+            <div className="flex justify-between items-center p-3 bg-amber-50">
+              <button 
+                disabled={page === 1} 
+                onClick={() => setPage(page - 1)} 
+                className="px-3 py-1.5 bg-white border-2 border-amber-200 rounded-xl disabled:opacity-50 text-xs font-black"
+              >
+                이전
+              </button>
+              <span className="text-amber-950 font-bold text-xs">
+                {page} / {totalPages} (총 {members.length}명)
+              </span>
+              <button 
+                disabled={page >= totalPages} 
+                onClick={() => setPage(page + 1)} 
+                className="px-3 py-1.5 bg-white border-2 border-amber-200 rounded-xl disabled:opacity-50 text-xs font-black"
+              >
+                다음
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-base font-black">
-          <button onClick={handleDelete} className="py-4 bg-red-600 text-white rounded-2xl">탈퇴/추방 길드원 삭제</button>
-          <button onClick={handleUpdate} className="py-4 bg-lime-700 text-white rounded-2xl">길드원 정보 수정하기</button>
+        {/* 액션 제어 버튼 */}
+        <div className="grid grid-cols-2 gap-2 text-sm font-black pt-2">
+          <button 
+            onClick={handleDelete} 
+            className="py-3.5 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-colors shadow-sm"
+          >
+            탈퇴/추방 삭제
+          </button>
+          <button 
+            onClick={handleUpdate} 
+            className="py-3.5 bg-[#556B2F] text-white rounded-2xl hover:bg-[#445823] transition-colors shadow-sm"
+          >
+            정보 수정하기
+          </button>
         </div>
       </div>
     </div>

@@ -18,12 +18,15 @@ export default function Header() {
     <div className="w-full bg-[#4D7C0F] text-white p-5 rounded-b-2xl shadow-md border-b-4 border-amber-900/20 mb-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-black tracking-wide">🌿 비옥한 땅</h1>
+        
+        {/* 눈에 잘 띄고 아기자기한 홈버튼 디자인 */}
         <button 
           onClick={() => router.push('/list')} 
-          className="p-2 bg-[#3f660c] rounded-xl hover:bg-[#33550a] transition-all"
+          className="flex flex-col items-center justify-center px-3 py-1.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-white rounded-2xl shadow-md border-2 border-amber-300 transition-all cursor-pointer"
           title="홈으로"
         >
-          <Home className="w-6 h-6 text-amber-200" />
+          <Home className="w-5 h-5 text-amber-100 drop-shadow-sm mb-0.5" />
+          <span className="text-[11px] font-black tracking-tighter leading-none text-white drop-shadow-sm">홈으로</span>
         </button>
       </div>
       
