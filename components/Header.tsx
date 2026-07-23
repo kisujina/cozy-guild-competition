@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home } from 'lucide-react'; // Home 아이콘 추가
+import { Home, LogOut } from 'lucide-react'; // Home, LogOut 아이콘 추가
 
 export default function Header() {
   const router = useRouter();
@@ -18,7 +18,6 @@ export default function Header() {
     <div className="w-full bg-[#4D7C0F] text-white p-5 rounded-b-2xl shadow-md border-b-4 border-amber-900/20 mb-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-black tracking-wide">🌿 비옥한 땅</h1>
-        
         {/* 눈에 잘 띄고 아기자기한 홈버튼 디자인 */}
         <button 
           onClick={() => router.push('/list')} 
@@ -32,8 +31,16 @@ export default function Header() {
       
       {user && (
         <div className="mt-4 flex items-center justify-between text-base font-bold opacity-90 bg-[#3f660c] px-3 py-1.5 rounded-lg">
+         
           <span>직급: <span className="text-amber-200">{user.role}</span></span>
           <span>닉네임: <span className="text-amber-200">{user.nickname}</span></span>
+          {/* 나가기 버튼 */}
+          <button 
+            onClick={() => router.push('/')}
+            title="로그아웃"
+          >
+            <LogOut className="w-5 h-5 text-amber-100 drop-shadow-sm mb-0.5" />
+          </button>
         </div>
       )}
     </div>

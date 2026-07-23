@@ -13,6 +13,9 @@ export default function ListPage() {
   const [guildRank, setGuildRank] = useState('A');
   const [memberList, setMemberList] = useState<any[]>([]);
   
+  // 보유 꽃 멤버 전체 조회 체크박스 상태 추가
+  const [showAllOwners, setShowAllOwners] = useState(false);
+  
   // 페이징 처리
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -99,7 +102,10 @@ export default function ListPage() {
     }
 
     if (data) {
+      // 전체 조회 체크박스가 꺼져있을 때만 기존 미션 가능 조건 필터링 적용
       const filteredData = data.filter((item: any) => {
+        if (showAllOwners) return true; // 전체 조회 체크 시 필터링 없이 모두 포함
+
         const p = item.profiles;
         if (p.is_basic_only === 'Y') return p.completed_missions < maxMissions;
         const limitWithExtra = maxMissions + 6;
@@ -179,6 +185,19 @@ export default function ListPage() {
           >
             <Search className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* (보유 꽃 멤버 전체 조회) 체크박스 영역 */}
+        <div className="px-1 flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-pink text-amber-900">
+            <input 
+              type="checkbox" 
+              checked={showAllOwners} 
+              onChange={(e) => setShowAllOwners(e.target.checked)}
+              className="w-4 h-4 accent-lime-700 rounded cursor-pointer"
+            />
+            <span>꽃 보유 멤버 전체 조회하려면 체크박스 선택 후 조회하세요.</span>
+          </label>
         </div>
 
         {selectedFlower && (
