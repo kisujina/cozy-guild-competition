@@ -1,6 +1,6 @@
 {
-  "name": "경진당",
-  "short_name": "길드앱",
+  "name": "경쟁전에진심인당신",
+  "short_name": "경진당",
   "description": "길드원 및 경쟁전 임무 관리를 위한 모바일 웹",
   "start_url": "/",
   "display": "standalone",
