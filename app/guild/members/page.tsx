@@ -363,7 +363,7 @@ export default function MemberManagePage() {
                 className="flex-1 p-3.5 border-2 border-amber-200 rounded-2xl font-bold bg-white text-sm focus:outline-none focus:border-[#556B2F]"
                 autoComplete="off"
               />
-              <button 
+              {/* <button 
                 onClick={() => {
                   setPage(1);
                   fetchMembers();
@@ -372,7 +372,7 @@ export default function MemberManagePage() {
                 title="검색"
               >
                 <Search className="w-6 h-6" />
-              </button>
+              </button> */}
               <button 
                 onClick={handleResetSearch} 
                 className="w-14 h-14 bg-gray-200 text-gray-700 rounded-2xl flex items-center justify-center hover:bg-gray-300 transition-colors shadow-sm shrink-0 cursor-pointer"
