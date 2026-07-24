@@ -33,7 +33,7 @@ export default function CreateFlowerPage() {
     if (error) {
       alert('중복 등록이거나 네트워크 통신 장애가 생겼습니다.');
     } else {
-      alert(`신규 꽃 '${name}' 등록 완료!`);
+      alert(`신규 꽃 '${name}' 등록 완료! 🎉`);
       router.push('/flowers/manage');
     }
   };
@@ -43,6 +43,13 @@ export default function CreateFlowerPage() {
       <Header />
 
       <div className="px-4 flex-1 space-y-4 w-full box-border pt-2">
+        {/* 상단 경고 문구 추가 */}
+        <div className="px-1">
+          <p className="p-2.5 text-xs font-bold text-red-500 bg-red-50 rounded-xl border border-red-100 flex items-center gap-1">
+            <span>⚠️</span> 새로 생긴 꽃을 등록하는 화면입니다. 정확히 입력해주세요.
+          </p>
+        </div>
+
         <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm space-y-4">
           <h2 className="text-base font-black text-amber-900 border-b border-amber-100 pb-2 flex items-center gap-1.5">
             <span>🌱</span> 신규 꽃 등록하기
@@ -80,13 +87,13 @@ export default function CreateFlowerPage() {
         <div className="grid grid-cols-2 gap-2 pt-2">
           <button 
             onClick={() => router.push('/flowers/manage')} 
-            className="py-3.5 bg-gray-300 text-gray-700 rounded-2xl font-black text-base hover:bg-gray-400 transition-colors shadow-sm"
+            className="py-3.5 bg-gray-300 text-gray-700 rounded-2xl font-black text-base hover:bg-gray-400 transition-colors shadow-sm cursor-pointer"
           >
             취소
           </button>
           <button 
             onClick={handleRegister} 
-            className="py-3.5 bg-[#556B2F] text-white rounded-2xl font-black text-base hover:bg-[#445823] transition-colors shadow-sm"
+            className="py-3.5 bg-[#556B2F] text-white rounded-2xl font-black text-base hover:bg-[#445823] transition-colors shadow-sm cursor-pointer"
           >
             등록 완료
           </button>

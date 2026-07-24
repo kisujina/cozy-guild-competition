@@ -3,13 +3,18 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Header from '@/components/Header';
+import { Search, X } from 'lucide-react';
 
 export default function FlowerSelectPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [grade, setGrade] = useState('N');
+  const [grade, setGrade] = useState('ALL'); // 기본값을 'ALL'(전체)로 변경
   const [searchWord, setSearchWord] = useState('');
   const [flowers, setFlowers] = useState<any[]>([]);
+  
+  // 실시간 꽃 검색 힌트 리스트 상태 및 팝업 제어 플래그
+  const [suggestedFlowers, setSuggestedFlowers] = useState<any[]>([]);
+  const [isSelecting, setIsSelecting] = useState(false);
   
   // 페이징 & 체크박스 다중 선택 메모리 상태
   const [page, setPage] = useState(1);
@@ -37,6 +42,41 @@ export default function FlowerSelectPage() {
     }
   }, [grade, user]);
 
+  // 실시간 꽃 이름 자동완성/추천 검색어 조회
+  useEffect(() => {
+    if (isSelecting) {
+      setSuggestedFlowers([]);
+      return;
+    }
+
+    const fetchFlowerHints = async () => {
+      if (!searchWord.trim()) {
+        setSuggestedFlowers([]);
+        return;
+      }
+
+      const cleanKeyword = searchWord.trim().replace(/\s+/g, '');
+      let query = supabase.from('flowers').select('*');
+      if (grade !== 'ALL') {
+        query = query.eq('grade', grade);
+      }
+      const { data, error } = await query;
+
+      if (!error && data) {
+        const filtered = data.filter((f: any) => 
+          f.name.replace(/\s+/g, '').includes(cleanKeyword)
+        );
+        setSuggestedFlowers(filtered);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchFlowerHints();
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchWord, grade, isSelecting]);
+
   const loadCounts = async () => {
     const { count: total } = await supabase.from('flowers').select('*', { count: 'exact', head: true });
     setAllCount(total || 0);
@@ -54,10 +94,16 @@ export default function FlowerSelectPage() {
   };
 
   const fetchFlowers = async (targetPage = 1) => {
+    setIsSelecting(true); // 검색 실행 시 자동완성 창 닫기
+    setSuggestedFlowers([]);
+
     let query = supabase
       .from('flowers')
-      .select('*', { count: 'exact' })
-      .eq('grade', grade);
+      .select('*', { count: 'exact' });
+
+    if (grade !== 'ALL') {
+      query = query.eq('grade', grade);
+    }
 
     if (searchWord.trim()) {
       query = query.ilike('name', `%${searchWord.trim()}%`);
@@ -78,6 +124,14 @@ export default function FlowerSelectPage() {
     }
   };
 
+  // 검색창 데이터 초기화 함수
+  const handleResetSearch = () => {
+    setSearchWord('');
+    setSuggestedFlowers([]);
+    setIsSelecting(false);
+    fetchFlowers(1);
+  };
+
   const handleCheckboxChange = (flowerId: number, checked: boolean) => {
     setCheckedMap((prev) => ({
       ...prev,
@@ -96,8 +150,11 @@ export default function FlowerSelectPage() {
   const handleSave = async () => {
     if (!user) return;
 
-    const { data: allFlowerList } = await supabase.from('flowers').select('id');
-    if (!allFlowerList) return;
+    const { data: allFlowerList, error: flowerError } = await supabase.from('flowers').select('id');
+    if (flowerError || !allFlowerList) {
+      alert('꽃 목록을 불러오는 중 오류가 발생했습니다.');
+      return;
+    }
 
     const upsertPayload = allFlowerList.map((f) => ({
       user_id: user.id,
@@ -111,7 +168,6 @@ export default function FlowerSelectPage() {
       alert('보유 꽃 등록 도중 오류가 발생했습니다.');
     } else {
       alert('보유 꽃 정보가 정상적으로 등록/수정 되었습니다.');
-      router.push('/list');
     }
   };
 
@@ -124,6 +180,7 @@ export default function FlowerSelectPage() {
       <div className="px-4 flex-1 space-y-4 w-full box-border pt-2">
         {/* 안내 문구 영역 */}
         <div className="p-3 bg-red-50 rounded-2xl border border-red-100 space-y-1">
+          <p className="text-xs font-bold text-red-500">📌꽃이 없을 경우 길드장/부길드장에게 알려주세요.</p>
           <p className="text-xs font-bold text-red-500">1️⃣ 꽃의 등급에 맞는 이름이 있어야 검색이 됩니다.</p>
           <p className="text-xs font-bold text-red-500">2️⃣ 체크박스 선택 시 보유 꽃, 해제 시 미보유 꽃입니다.</p>
           <p className="text-xs font-bold text-red-500">3️⃣ 체크박스 선택 후에 수정 버튼을 눌러야 저장됩니다.</p>
@@ -132,8 +189,8 @@ export default function FlowerSelectPage() {
         {/* 등급 필터 및 검색 영역 */}
         <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm space-y-3">
           <label className="block text-base font-extrabold">등급 필터</label>
-          <div className="grid grid-cols-5 gap-1.5">
-            {['N', 'R', 'SR', 'SSR', 'UR'].map((g) => (
+          <div className="grid grid-cols-6 gap-1">
+            {['ALL', 'N', 'R', 'SR', 'SSR', 'UR'].map((g) => (
               <label key={g} className={`flex flex-col items-center py-2 rounded-xl cursor-pointer font-black text-xs border-2 transition-colors ${
                 grade === g ? 'bg-lime-50 border-lime-600 text-lime-900' : 'bg-amber-50/50 border-amber-200 text-amber-800'
               }`}>
@@ -142,33 +199,110 @@ export default function FlowerSelectPage() {
                   name="grade" 
                   value={g} 
                   checked={grade === g}
-                  onChange={(e) => setGrade(e.target.value)}
-                  className="accent-lime-700 w-3.5 h-3.5 mb-1"
+                  onChange={(e) => {
+                    setGrade(e.target.value);
+                    setSearchWord('');
+                    setSuggestedFlowers([]);
+                  }}
+                  className="accent-lime-700 w-3.5 h-3.5 mb-1 cursor-pointer"
                 />
-                <span>{g}</span>
+                <span>{g === 'ALL' ? '전체' : g}</span>
               </label>
             ))}
           </div>
 
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              placeholder="꽃 이름 검색" 
-              value={searchWord}
-              onChange={(e) => setSearchWord(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') fetchFlowers(1); }}
-              className="flex-1 p-3 text-sm border-2 border-amber-200 rounded-xl font-bold bg-white focus:outline-none focus:border-lime-700"
-            />
-            <button 
-              onClick={() => fetchFlowers(1)} 
-              className="bg-lime-700 text-white px-4 rounded-xl font-extrabold text-sm hover:bg-lime-800 transition-colors shadow-sm"
-            >
-              검색
-            </button>
+          {/* 검색바 및 실시간 추천 목록 컨테이너 */}
+          <div className="relative">
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                placeholder="꽃 이름 검색" 
+                value={searchWord}
+                onChange={(e) => {
+                  setIsSelecting(false);
+                  setSearchWord(e.target.value);
+                }}
+                onKeyDown={(e) => { 
+                  if (e.key === 'Enter') {
+                    fetchFlowers(1); 
+                  } 
+                }}
+                className="flex-1 p-3 text-sm border-2 border-amber-200 rounded-xl font-bold bg-white focus:outline-none focus:border-lime-700"
+                autoComplete="off"
+              />
+              <button 
+                onClick={() => fetchFlowers(1)} 
+                className="bg-lime-700 text-white px-4 rounded-xl font-extrabold text-sm hover:bg-lime-800 transition-colors shadow-sm flex items-center justify-center cursor-pointer"
+                title="검색"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={handleResetSearch} 
+                className="bg-gray-200 text-gray-700 px-3 rounded-xl hover:bg-gray-300 flex items-center justify-center transition-colors shadow-sm cursor-pointer"
+                title="초기화"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 실시간 꽃 추천(자동완성) 리스트 팝업 */}
+            {suggestedFlowers.length > 0 && !isSelecting && (
+              <div className="absolute left-0 right-14 top-full mt-1 bg-white border-2 border-amber-200 rounded-xl shadow-lg z-20 overflow-hidden max-h-48 overflow-y-auto">
+                <p className="px-3 py-1.5 text-[10px] font-black text-amber-700 bg-amber-50 border-b border-amber-100">
+                  🌸 검색된 꽃 목록 (클릭 시 바로 조회)
+                </p>
+                {suggestedFlowers.map((flower, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setIsSelecting(true);
+                      setSearchWord(flower.name);
+                      // 선택한 꽃으로 즉시 검색 실행
+                      let query = supabase
+                        .from('flowers')
+                        .select('*', { count: 'exact' })
+                        .ilike('name', `%${flower.name}%`);
+                      
+                      if (grade !== 'ALL') {
+                        query = query.eq('grade', grade);
+                      }
+                      
+                      query.then(({ data, count }) => {
+                        if (data) {
+                          const sortedData = [...data].sort((a, b) => {
+                            const aOwned = checkedMap[a.id] ? 1 : 0;
+                            const bOwned = checkedMap[b.id] ? 1 : 0;
+                            return bOwned - aOwned;
+                          });
+                          setGradeCount(count || 0);
+                          setTotalCount(count || 0);
+                          setFlowers(sortedData.slice(0, limit));
+                          setPage(1);
+                        }
+                      });
+                      setSuggestedFlowers([]);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-amber-900 hover:bg-lime-50 transition-colors border-b border-amber-50 last:border-b-0 flex items-center justify-between"
+                  >
+                    <span>{flower.name}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded text-white ${
+                      flower.grade === 'UR' ? 'bg-pink-600' :
+                      flower.grade === 'SSR' ? 'bg-orange-500' :
+                      flower.grade === 'SR' ? 'bg-purple-600' :
+                      flower.grade === 'R' ? 'bg-teal-600' : 'bg-slate-400'
+                    }`}>
+                      {flower.grade}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <p className="text-right text-[11px] font-black text-lime-700 pt-1">
-            해당 등급의 꽃: {gradeCount}개 / 모든 등급의 꽃: {allCount}개
+            {grade === 'ALL' ? `전체 꽃: ${gradeCount}개` : `해당 등급의 꽃: ${gradeCount}개`} / 모든 등급의 꽃: {allCount}개
           </p>
         </div>
 
@@ -183,7 +317,7 @@ export default function FlowerSelectPage() {
                       type="checkbox" 
                       checked={isAllPageChecked}
                       onChange={(e) => handleToggleAll(e.target.checked)}
-                      className="w-4 h-4 accent-lime-700"
+                      className="w-4 h-4 accent-lime-700 cursor-pointer"
                     />
                   </th>
                   <th className="py-3 px-1">등급</th>
@@ -201,7 +335,7 @@ export default function FlowerSelectPage() {
                           type="checkbox" 
                           checked={isOwned}
                           onChange={(e) => handleCheckboxChange(f.id, e.target.checked)}
-                          className="w-5 h-5 accent-lime-700"
+                          className="w-5 h-5 accent-lime-700 cursor-pointer"
                         />
                       </td>
                       <td className="py-3 px-1 text-xs">{f.grade}</td>
@@ -222,7 +356,7 @@ export default function FlowerSelectPage() {
             <button 
               disabled={page === 1}
               onClick={() => fetchFlowers(page - 1)}
-              className="px-3 py-1.5 bg-white border-2 border-amber-200 rounded-xl text-xs font-black disabled:opacity-50"
+              className="px-3 py-1.5 bg-white border-2 border-amber-200 rounded-xl text-xs font-black disabled:opacity-50 cursor-pointer"
             >
               이전
             </button>
@@ -230,7 +364,7 @@ export default function FlowerSelectPage() {
             <button 
               disabled={page >= Math.ceil(totalCount / limit)}
               onClick={() => fetchFlowers(page + 1)}
-              className="px-3 py-1.5 bg-white border-2 border-amber-200 rounded-xl text-xs font-black disabled:opacity-50"
+              className="px-3 py-1.5 bg-white border-2 border-amber-200 rounded-xl text-xs font-black disabled:opacity-50 cursor-pointer"
             >
               다음
             </button>
@@ -241,7 +375,7 @@ export default function FlowerSelectPage() {
         <div className="pt-2">
           <button 
             onClick={handleSave} 
-            className="w-full py-4 bg-blue-500 text-white font-black rounded-2xl text-lg hover:bg-blue-600 transition-colors shadow-sm"
+            className="w-full py-4 bg-blue-500 text-white font-black rounded-2xl text-lg hover:bg-blue-600 transition-colors shadow-sm cursor-pointer"
           >
             보유 꽃 수정하기
           </button>

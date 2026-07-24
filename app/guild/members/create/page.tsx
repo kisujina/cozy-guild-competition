@@ -24,36 +24,50 @@ export default function CreateMemberPage() {
   }, []);
 
   const handleRegister = async () => {
-    if (!nickname.trim()) {
-      alert('닉네임을 정확히 작성해 주세요.');
-      return;
-    }
+      if (!nickname.trim()) {
+        alert('닉네임을 정확히 작성해 주세요.');
+        return;
+      }
 
-    // 이미 존재하는 닉네임 유효성 검증
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('nickname', nickname.trim())
-      .maybeSingle();
+      // 1. 현재 로그인된 사용자의 길드 ID 가져오기
+      const session = sessionStorage.getItem('guild_user');
+      if (!session) return;
+      const curUser = JSON.parse(session);
+      const currentGuildId = curUser.guild_id;
 
-    if (existing) {
-      alert('이미 등록된 동일한 이름의 닉네임이 존재합니다.');
-      return;
-    }
+      if (!currentGuildId) {
+        alert('길드 정보가 유효하지 않습니다.');
+        return;
+      }
 
-    const { error } = await supabase.from('profiles').insert({
-      nickname: nickname.trim(),
-      role: '멤버', // 기본 멤버 고정
-      is_vip: vip,
-    });
+      // 2. 현재 길드 내에서 동일한 닉네임이 있는지 검증 (필요시 전체 검증으로 유지 가능)
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('guild_id', currentGuildId) // 같은 길드 내 중복 체크로 변경 권장
+        .eq('nickname', nickname.trim())
+        .maybeSingle();
 
-    if (error) {
-      alert('데이터 등록 중 문제가 발견되었습니다.');
-    } else {
-      alert(`[비옥한 땅] 길드 가입 안내가 등록되었습니다. 새로운 길드원 ${nickname}님, 가입을 환영합니다! 🌱`);
-      router.push('/guild/members');
-    }
-  };
+      if (existing) {
+        alert('우리 길드에 이미 등록된 동일한 이름의 닉네임이 존재합니다.');
+        return;
+      }
+
+      // 3. insert 시 반드시 guild_id 포함하기
+      const { error } = await supabase.from('profiles').insert({
+        nickname: nickname.trim(),
+        role: '멤버',
+        is_vip: vip,
+        guild_id: currentGuildId, // 👈 이 부분이 반드시 들어가야 합니다!
+      });
+
+      if (error) {
+        alert('데이터 등록 중 문제가 발견되었습니다.');
+      } else {
+        alert(`새로운 길드원 ${nickname}님, 가입을 환영합니다! 🌱`);
+        router.push('/guild/members'); // 👈 실제 관리 페이지 경로에 맞게 수정
+      }
+    };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12 overflow-x-hidden box-border">

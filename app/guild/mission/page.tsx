@@ -27,7 +27,7 @@ export default function MissionSettingPage() {
     setBasicOnly(curUser.is_basic_only === true || curUser.is_basic_only === 'Y' ? 'Y' : 'N');
     
     fetchMyMissionData(curUser.id);
-    fetchGuildSetting();
+    fetchGuildSetting(curUser.guild_id);
     setLoading(false);
   }, []);
 
@@ -42,9 +42,17 @@ export default function MissionSettingPage() {
     }
   };
 
-  const fetchGuildSetting = async () => {
-    const { data } = await supabase.from('guild_settings').select('guild_rank').eq('id', 1).single();
-    if (data) setGuildRank(data.guild_rank);
+  // 현재 유저의 guild_id를 기반으로 길드 랭크 조회
+  const fetchGuildSetting = async (guildId: number) => {
+    const { data } = await supabase
+      .from('guild_settings')
+      .select('guild_rank')
+      .eq('id', guildId)
+      .maybeSingle();
+      
+    if (data && data.guild_rank) {
+      setGuildRank(data.guild_rank);
+    }
   };
 
   const getMissionCount = (rank: string) => {
@@ -78,7 +86,10 @@ export default function MissionSettingPage() {
     try {
       const isLeader = currentUser.role === '길드장' || currentUser.role === '부길드장';
       if (isLeader) {
-        await supabase.from('guild_settings').update({ guild_rank: guildRank }).eq('id', 1);
+        await supabase
+          .from('guild_settings')
+          .update({ guild_rank: guildRank })
+          .eq('id', currentUser.guild_id);
       }
 
       const { error } = await supabase
@@ -122,7 +133,8 @@ export default function MissionSettingPage() {
       
       <div className="px-4 pt-2">
         <p className="p-2 text-xs font-bold text-red-500 bg-red-50 rounded-xl border border-red-100 mb-4">
-          ※ 임무 삭제 시 필수 정보이니, 꼭 입력 부탁드립니다.
+          ⚠️경쟁전 임무 삭제 시 필수 정보이니, 입력해주세요.<br></br>
+          ❗완료 임무 횟수 변경되면 반드시 수정 반영해주세요.
         </p>
       </div>
 
@@ -141,7 +153,7 @@ export default function MissionSettingPage() {
                   value={v} 
                   checked={vip === v}
                   onChange={(e) => setVip(e.target.value)}
-                  className="mr-2 accent-lime-700 w-4 h-4"
+                  className="mr-2 accent-lime-700 w-4 h-4 cursor-pointer"
                 />
                 <span>{v === 'Y' ? 'VIP 유저' : '일반'}</span>
               </label>
@@ -151,7 +163,7 @@ export default function MissionSettingPage() {
         
         {/* 기본 임무 진행 여부 */}
         <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm">
-          <label className="block text-base font-extrabold mb-2.5">📋 기본 임무({maxMissions}회)만 진행 하나요?</label>
+          <label className="block text-base font-extrabold mb-2.5">📋 기본 임무({maxMissions}회)만 진행 하시나요?</label>
           <div className="grid grid-cols-2 gap-2">
             {['Y', 'N'].map((b) => (
               <label key={b} className={`flex items-center justify-center py-3 border-2 rounded-xl cursor-pointer font-bold text-base transition-colors ${
@@ -163,7 +175,7 @@ export default function MissionSettingPage() {
                   value={b} 
                   checked={basicOnly === b}
                   onChange={(e) => setBasicOnly(e.target.value)}
-                  className="mr-2 accent-lime-700 w-4 h-4"
+                  className="mr-2 accent-lime-700 w-4 h-4 cursor-pointer"
                 />
                 <span>{b === 'Y' ? '기본 임무만' : '추가 임무까지'}</span>
               </label>
@@ -173,9 +185,9 @@ export default function MissionSettingPage() {
 
         {/* 완료한 임무 횟수 직접 기입 영역 */}
         <div className="bg-white p-4 rounded-2xl border-2 border-amber-100 shadow-sm">
-          <label className="block text-base font-extrabold mb-2.5">⚔️ 내가 완료한 임무 개수</label>
+          <label className="block text-base font-extrabold mb-2.5">⚔️현재 내가 완료한 임무 횟수</label>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 bg-amber-50/60 p-3.5 rounded-xl border border-amber-200">
-            <span className="text-sm font-bold text-amber-900">
+            <span className="text-md font-bold text-amber-900">
               총 {basicOnly === 'Y' ? maxMissions : maxMissions + 6}회 중
             </span>
             <div className="flex items-center gap-1.5">
@@ -194,7 +206,7 @@ export default function MissionSettingPage() {
 
         {/* 서브밋 버튼 */}
         <div className="pt-2">
-          <button onClick={handleRegister} className="w-full py-4 bg-blue-500 text-white rounded-2xl font-black text-lg hover:bg-blue-600 transition-colors shadow-sm">
+          <button onClick={handleRegister} className="w-full py-4 bg-blue-500 text-white rounded-2xl font-black text-lg hover:bg-blue-600 transition-colors shadow-sm cursor-pointer">
             임무 정보 수정 완료
           </button>
         </div>
