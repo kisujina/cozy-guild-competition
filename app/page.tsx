@@ -22,6 +22,13 @@ export default function LoginPage() {
 
   const router = useRouter();
 
+  // 닉네임 유효성 검사 함수 (특수문자 금지, 중간 띄어쓰기 허용)
+  const isValidNickname = (name: string) => {
+    // 완성된 한글, 영문, 숫자, 그리고 공백(Space)만 허용하는 정규식
+    const regex = /^[가-힣a-zA-Z0-9\s]+$/;
+    return regex.test(name);
+  };
+
   // 사용자가 길드명을 입력할 때마다 유사한 길드 조회 (힌트 제공)
   useEffect(() => {
     const fetchGuildHints = async () => {
@@ -69,6 +76,12 @@ export default function LoginPage() {
       return;
     }
 
+    // 닉네임 특수문자 검증
+    if (!isValidNickname(nickname)) {
+      setError('닉네임에 특수문자는 사용할 수 없습니다!(한글,영어,숫자,띄어쓰기만 가능)');
+      return;
+    }
+
     const { data: guildData, error: guildError } = await supabase
       .from('guild_settings')
       .select('*')
@@ -111,6 +124,12 @@ export default function LoginPage() {
     }
     if (!adminNickname.trim()) {
       setRegisterError('길드장 닉네임을 입력해 주세요.');
+      return;
+    }
+
+    // 길드장 닉네임 특수문자 검증
+    if (!isValidNickname(adminNickname)) {
+      setRegisterError('닉네임에 특수문자는 사용할 수 없습니다!(한글,영어,숫자,띄어쓰기만 가능)');
       return;
     }
 

@@ -117,7 +117,7 @@ export default function Header() {
   return (
     <div className="w-full bg-[#4D7C0F] text-white p-5 rounded-b-2xl shadow-md border-b-4 border-amber-900/20 mb-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-black tracking-wide">🌿 {guildInfo?.guild_name || '🌸경진당🌸'}🔥</h1>
+        <h1 className="text-xl font-black tracking-wide">🌿 {guildInfo?.guild_name || '🌸경진당🌸'}🌸</h1>
         
         <div className="flex items-center gap-2">
           {/* 길드장인 경우에만 노출되는 길드 정보 수정 버튼 */}

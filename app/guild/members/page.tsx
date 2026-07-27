@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Header from '@/components/Header';
-import { Search, X } from 'lucide-react';
+import { Search, X, ArrowUpDown } from 'lucide-react';
 
 export default function MemberManagePage() {
   const router = useRouter();
@@ -21,6 +21,9 @@ export default function MemberManagePage() {
 
   // 경쟁전 모드 토글 상태 ('normal' | 'pvp')
   const [mode, setMode] = useState<'normal' | 'pvp'>('normal');
+
+  // 경쟁전 모드 정렬 상태 ('desc': 내림차순, 'asc': 오름차순)
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   const [localData, setLocalData] = useState<Record<string, { role: string; nickname: string; basic: string; vip: string; completed: number }>>({});
   
@@ -91,6 +94,29 @@ export default function MemberManagePage() {
     '멤버': 5
   };
 
+  const sortMemberList = (dataList: any[], currentMode: 'normal' | 'pvp', currentSortOrder: 'desc' | 'asc') => {
+    return [...dataList].sort((a, b) => {
+      if (currentMode === 'pvp') {
+        const completedA = localData[a.id]?.completed ?? a.completed_missions;
+        const completedB = localData[b.id]?.completed ?? b.completed_missions;
+
+        if (completedA !== completedB) {
+          return currentSortOrder === 'desc' ? completedB - completedA : completedA - completedB;
+        }
+        // 횟수가 같으면 닉네임 순 정렬
+        return a.nickname.localeCompare(b.nickname, 'ko');
+      } else {
+        const priorityA = rolePriority[a.role] || 99;
+        const priorityB = rolePriority[b.role] || 99;
+
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        return a.nickname.localeCompare(b.nickname, 'ko');
+      }
+    });
+  };
+
   const fetchMembers = async (targetGuildId?: string) => {
     setIsSelecting(true);
     setSuggestedMembers([]);
@@ -112,20 +138,8 @@ export default function MemberManagePage() {
     }
 
     if (data) {
-      const sortedMembers = [...data].sort((a, b) => {
-        const priorityA = rolePriority[a.role] || 99;
-        const priorityB = rolePriority[b.role] || 99;
-
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-        return a.nickname.localeCompare(b.nickname, 'ko');
-      });
-
-      setMembers(sortedMembers);
-
       const buffer: any = {};
-      sortedMembers.forEach((m) => {
+      data.forEach((m) => {
         buffer[m.id] = {
           role: m.role,
           nickname: m.nickname,
@@ -135,8 +149,19 @@ export default function MemberManagePage() {
         };
       });
       setLocalData(buffer);
+
+      const sortedMembers = sortMemberList(data, mode, sortOrder);
+      setMembers(sortedMembers);
     }
   };
+
+  // 모드 또는 정렬 상태 변경 시 리스트 재정렬
+  useEffect(() => {
+    if (members.length > 0) {
+      const sorted = sortMemberList(members, mode, sortOrder);
+      setMembers(sorted);
+    }
+  }, [mode, sortOrder]);
 
   // 검색창 데이터 초기화 함수
   const handleResetSearch = () => {
@@ -267,9 +292,10 @@ export default function MemberManagePage() {
     if (error) {
       console.error('임무 횟수 실시간 수정 실패:', error);
     } else {
-      setMembers((prevMembers) =>
-        prevMembers.map((m) => (m.id === id ? { ...m, completed_missions: targetVal } : m))
-      );
+      setMembers((prevMembers) => {
+        const updated = prevMembers.map((m) => (m.id === id ? { ...m, completed_missions: targetVal } : m));
+        return sortMemberList(updated, mode, sortOrder);
+      });
     }
   };
 
@@ -363,16 +389,6 @@ export default function MemberManagePage() {
                 className="flex-1 p-3.5 border-2 border-amber-200 rounded-2xl font-bold bg-white text-sm focus:outline-none focus:border-[#556B2F]"
                 autoComplete="off"
               />
-              {/* <button 
-                onClick={() => {
-                  setPage(1);
-                  fetchMembers();
-                }} 
-                className="w-14 h-14 bg-[#556B2F] text-white rounded-2xl flex items-center justify-center hover:bg-[#445823] transition-colors shadow-sm shrink-0 cursor-pointer"
-                title="검색"
-              >
-                <Search className="w-6 h-6" />
-              </button> */}
               <button 
                 onClick={handleResetSearch} 
                 className="w-14 h-14 bg-gray-200 text-gray-700 rounded-2xl flex items-center justify-center hover:bg-gray-300 transition-colors shadow-sm shrink-0 cursor-pointer"
@@ -396,7 +412,6 @@ export default function MemberManagePage() {
                       setIsSelecting(true);
                       setSearchWord(member.nickname);
                       
-                      // 선택한 길드원으로 즉시 검색 실행
                       supabase
                         .from('profiles')
                         .select('*')
@@ -404,12 +419,7 @@ export default function MemberManagePage() {
                         .ilike('nickname', `%${member.nickname}%`)
                         .then(({ data }) => {
                           if (data) {
-                            const sortedMembers = [...data].sort((a, b) => {
-                              const priorityA = rolePriority[a.role] || 99;
-                              const priorityB = rolePriority[b.role] || 99;
-                              if (priorityA !== priorityB) return priorityA - priorityB;
-                              return a.nickname.localeCompare(b.nickname, 'ko');
-                            });
+                            const sortedMembers = sortMemberList(data, mode, sortOrder);
                             setMembers(sortedMembers);
                             setPage(1);
 
@@ -443,16 +453,27 @@ export default function MemberManagePage() {
 
         {/* 멤버 테이블 영역 */}
         <div className="space-y-1.5">
-          {/* 모드별 안내 문구 조건부 노출 */}
-          {mode === 'normal' ? (
-            <p className="text-xs font-bold text-red-500 px-1">
-              ❤️ 체크박스 선택 후에 수정/삭제 버튼을 눌러야 정보가 저장됩니다.
-            </p>
-          ) : (
-            <p className="text-xs font-bold text-orange-600 px-1">
-              ❤️ 마이너스, 플러스 버튼을 눌러 임무 횟수 수정이 가능합니다.
-            </p>
-          )}
+          {/* 모드별 안내 문구 및 정렬 토글 버튼 조건부 노출 */}
+          <div className="flex justify-between items-center px-1">
+            {mode === 'normal' ? (
+              <p className="text-xs font-bold text-red-500">
+                ❤️ 체크박스 선택 후에 수정/삭제 버튼을 눌러야 정보가 저장됩니다.
+              </p>
+            ) : (
+              <div className="flex items-center justify-between w-full">
+                <p className="text-xs font-bold text-orange-600">
+                  임무횟수 기준 오름차순/내림차순 정렬 →
+                </p>
+                <button
+                  onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                  className="flex items-center gap-1 bg-orange-100 text-orange-800 px-2.5 py-1 rounded-xl text-xs font-black border border-orange-200 hover:bg-orange-200 transition-colors cursor-pointer shrink-0"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  <span>{sortOrder === 'desc' ? '내림차순 (높은순)' : '오름차순 (낮은순)'}</span>
+                </button>
+              </div>
+            )}
+          </div>
           
           <div className="bg-white rounded-2xl border-2 border-amber-100 shadow-sm overflow-hidden font-bold w-full">
             <div className="overflow-x-auto w-full">

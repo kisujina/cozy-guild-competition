@@ -23,51 +23,77 @@ export default function CreateMemberPage() {
     }
   }, []);
 
+  // 닉네임 유효성 검사 함수 (특수문자 금지, 중간 띄어쓰기 허용)
+  const isValidNickname = (name: string) => {
+    const regex = /^[가-힣a-zA-Z0-9\s]+$/;
+    return regex.test(name);
+  };
+
   const handleRegister = async () => {
-      if (!nickname.trim()) {
-        alert('닉네임을 정확히 작성해 주세요.');
-        return;
-      }
+    if (!nickname.trim()) {
+      alert('닉네임을 정확히 작성해 주세요.');
+      return;
+    }
 
-      // 1. 현재 로그인된 사용자의 길드 ID 가져오기
-      const session = sessionStorage.getItem('guild_user');
-      if (!session) return;
-      const curUser = JSON.parse(session);
-      const currentGuildId = curUser.guild_id;
+    // 닉네임 특수문자 검증
+    if (!isValidNickname(nickname)) {
+      alert('닉네임에 특수문자는 사용할 수 없습니다!(한글,영어,숫자,띄어쓰기만 가능)');
+      return;
+    }
 
-      if (!currentGuildId) {
-        alert('길드 정보가 유효하지 않습니다.');
-        return;
-      }
+    // 1. 현재 로그인된 사용자의 길드 ID 가져오기
+    const session = sessionStorage.getItem('guild_user');
+    if (!session) return;
+    const curUser = JSON.parse(session);
+    const currentGuildId = curUser.guild_id;
 
-      // 2. 현재 길드 내에서 동일한 닉네임이 있는지 검증 (필요시 전체 검증으로 유지 가능)
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('guild_id', currentGuildId) // 같은 길드 내 중복 체크로 변경 권장
-        .eq('nickname', nickname.trim())
-        .maybeSingle();
+    if (!currentGuildId) {
+      alert('길드 정보가 유효하지 않습니다.');
+      return;
+    }
 
-      if (existing) {
+    // 2. 전체 프로필에서 해당 닉네임이 존재하는지 검증 (다른 길드 가입 여부 확인 포함)
+    const { data: existingProfiles, error: searchError } = await supabase
+      .from('profiles')
+      .select('guild_id, guild_settings(guild_name)')
+      .eq('nickname', nickname.trim());
+
+    if (searchError) {
+      console.error(searchError);
+      alert('닉네임 중복 확인 중 문제가 발생했습니다.');
+      return;
+    }
+
+    if (existingProfiles && existingProfiles.length > 0) {
+      // 현재 길드에 이미 존재하는지 확인
+      const sameGuildMatch = existingProfiles.find(p => p.guild_id === currentGuildId);
+      if (sameGuildMatch) {
         alert('우리 길드에 이미 등록된 동일한 이름의 닉네임이 존재합니다.');
         return;
       }
 
-      // 3. insert 시 반드시 guild_id 포함하기
-      const { error } = await supabase.from('profiles').insert({
-        nickname: nickname.trim(),
-        role: '멤버',
-        is_vip: vip,
-        guild_id: currentGuildId, // 👈 이 부분이 반드시 들어가야 합니다!
-      });
+      // 다른 길드에 이미 가입되어 있는 경우
+      const otherGuildMatch = existingProfiles[0];
+      const otherGuildName = (otherGuildMatch.guild_settings as any)?.guild_name || '다른 길드';
+      alert(`『${nickname.trim()}』는(은) 이미 『${otherGuildName}』길드에 가입된 길드원입니다. 기존 길드에서 탈퇴 처리 후 등록 부탁드립니다.`);
+      return;
+    }
 
-      if (error) {
-        alert('데이터 등록 중 문제가 발견되었습니다.');
-      } else {
-        alert(`새로운 길드원 ${nickname}님, 가입을 환영합니다! 🌱`);
-        router.push('/guild/members'); // 👈 실제 관리 페이지 경로에 맞게 수정
-      }
-    };
+    // 3. insert 시 반드시 guild_id 포함하기
+    const { error } = await supabase.from('profiles').insert({
+      nickname: nickname.trim(),
+      role: '멤버',
+      is_vip: vip,
+      guild_id: currentGuildId, // 👈 이 부분이 반드시 들어가야 합니다!
+    });
+
+    if (error) {
+      alert('데이터 등록 중 문제가 발견되었습니다.');
+    } else {
+      alert(`새로운 길드원 ${nickname}님, 가입을 환영합니다! 🌱`);
+      router.push('/guild/members'); // 👈 실제 관리 페이지 경로에 맞게 수정
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col pb-12 overflow-x-hidden box-border">
