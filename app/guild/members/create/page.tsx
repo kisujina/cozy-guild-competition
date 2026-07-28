@@ -23,9 +23,13 @@ export default function CreateMemberPage() {
     }
   }, []);
 
-  // 닉네임 유효성 검사 함수 (특수문자 금지, 중간 띄어쓰기 허용)
+  // 닉네임 유효성 검사 함수 (특수문자 금지, 완성형 한글, 자음/모음, 영문, 숫자, 중간 띄어쓰기 허용)
   const isValidNickname = (name: string) => {
-    const regex = /^[가-힣a-zA-Z0-9\s]+$/;
+    // [가-힣]: 완성된 한글
+    // [ㄱ-ㅎㅏ-ㅣ]: 단독 자음 및 모음
+    // [a-zA-Z0-9]: 영문 및 숫자
+    // [\s]: 띄어쓰기
+    const regex = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]+$/;
     return regex.test(name);
   };
 

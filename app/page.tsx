@@ -22,10 +22,10 @@ export default function LoginPage() {
 
   const router = useRouter();
 
-  // 닉네임 유효성 검사 함수 (특수문자 금지, 중간 띄어쓰기 허용)
+  // 닉네임 유효성 검사 함수 (특수문자 금지, 완성된 한글 + 자음/모음 + 영문 + 숫자 + 중간 띄어쓰기 허용)
   const isValidNickname = (name: string) => {
-    // 완성된 한글, 영문, 숫자, 그리고 공백(Space)만 허용하는 정규식
-    const regex = /^[가-힣a-zA-Z0-9\s]+$/;
+    // 완성된 한글(가-힣), 자음/모음(ㄱ-ㅎ, ㅏ-ㅣ), 영문, 숫자, 공백(Space)만 허용하는 정규식
+    const regex = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]+$/;
     return regex.test(name);
   };
 
@@ -78,7 +78,7 @@ export default function LoginPage() {
 
     // 닉네임 특수문자 검증
     if (!isValidNickname(nickname)) {
-      setError('닉네임에 특수문자는 사용할 수 없습니다!(한글,영어,숫자,띄어쓰기만 가능)');
+      setError('닉네임에 특수문자는 사용할 수 없습니다!(한글, 자음/모음, 영어, 숫자, 띄어쓰기만 가능)');
       return;
     }
 
@@ -129,7 +129,7 @@ export default function LoginPage() {
 
     // 길드장 닉네임 특수문자 검증
     if (!isValidNickname(adminNickname)) {
-      setRegisterError('닉네임에 특수문자는 사용할 수 없습니다!(한글,영어,숫자,띄어쓰기만 가능)');
+      setRegisterError('닉네임에 특수문자는 사용할 수 없습니다!(한글, 자음/모음, 영어, 숫자, 띄어쓰기만 가능)');
       return;
     }
 
@@ -144,9 +144,15 @@ export default function LoginPage() {
       return;
     }
 
+    // 새 길드 등록 시 임무 관련 컬럼 기본값('N', 0) 함께 삽입
     const { data: newGuild, error: guildInsertError } = await supabase
       .from('guild_settings')
-      .insert([{ guild_name: newGuildName.trim(), guild_rank: newGuildRank }])
+      .insert([{ 
+        guild_name: newGuildName.trim(), 
+        guild_rank: newGuildRank,
+        is_default_mission_enabled: 'N',
+        default_mission_score: 0
+      }])
       .select()
       .single();
 
@@ -164,7 +170,8 @@ export default function LoginPage() {
         role: '길드장',
         is_basic_only: 'N',
         is_vip: 'Y',
-        completed_missions: 0
+        completed_missions: 0,
+        total_mission_score: 0
       }]);
 
     if (profileInsertError) {
@@ -199,7 +206,7 @@ export default function LoginPage() {
 
       <div className="w-full bg-white rounded-3xl shadow-xl border-4 border-lime-600/20 p-6 box-border mt-8">
         <h1 className="text-3xl font-black text-center text-[#4D7C0F] mb-1">🌸경진당🌸</h1>
-        <p className="text-center text-xs font-bold text-amber-800 mb-6">🔥경쟁전에 진심인 당신의 도우미 v1.0</p>
+        <p className="text-center text-xs font-bold text-amber-800 mb-6">🔥경쟁전에 진심인 당신의 도우미 v1.1</p>
         
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="relative">

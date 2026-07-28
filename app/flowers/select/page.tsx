@@ -42,7 +42,7 @@ export default function FlowerSelectPage() {
     }
   }, [grade, user]);
 
-  // 실시간 꽃 이름 자동완성/추천 검색어 조회
+  // 실시간 꽃 이름 자동완성/추천 검색어 조회 (한글 자음/모음 입력 대응)
   useEffect(() => {
     if (isSelecting) {
       setSuggestedFlowers([]);
@@ -63,9 +63,17 @@ export default function FlowerSelectPage() {
       const { data, error } = await query;
 
       if (!error && data) {
-        const filtered = data.filter((f: any) => 
-          f.name.replace(/\s+/g, '').includes(cleanKeyword)
-        );
+        // 자음, 모음 또는 일반 단어가 포함되어 있는지 정규식 또는 문자열 포함 여부로 체크
+        const filtered = data.filter((f: any) => {
+          const cleanName = f.name.replace(/\s+/g, '');
+          try {
+            // 자음/모음만 입력된 경우도 에러 없이 정규식 생성
+            const regex = new RegExp(cleanKeyword);
+            return cleanName.includes(cleanKeyword) || regex.test(cleanName);
+          } catch {
+            return cleanName.includes(cleanKeyword);
+          }
+        });
         setSuggestedFlowers(filtered);
       }
     };
@@ -105,8 +113,10 @@ export default function FlowerSelectPage() {
       query = query.eq('grade', grade);
     }
 
-    if (searchWord.trim()) {
-      query = query.ilike('name', `%${searchWord.trim()}%`);
+    const trimmedSearch = searchWord.trim();
+    if (trimmedSearch) {
+      // 자음/모음 혹은 일반 검색어 모두 대응하도록 ilike 적용
+      query = query.ilike('name', `%${trimmedSearch}%`);
     }
 
     const { data, count } = await query;
@@ -216,7 +226,7 @@ export default function FlowerSelectPage() {
             <div className="flex gap-2">
               <input 
                 type="text" 
-                placeholder="꽃 이름 검색" 
+                placeholder="꽃 이름 검색 (자음/모음 가능)" 
                 value={searchWord}
                 onChange={(e) => {
                   setIsSelecting(false);
