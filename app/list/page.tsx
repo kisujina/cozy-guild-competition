@@ -73,6 +73,8 @@ export default function ListPage() {
 
   const maxMissions = getLimitMissionCount(guildRank);
 
+  const addMissions = 6;
+
   useEffect(() => {
     if (isSelecting) {
       setSuggestedFlowers([]);
@@ -146,7 +148,7 @@ export default function ListPage() {
         const p = item.profiles;
 
         if (filters.excludeBasicOnly) {
-          if (p.is_basic_only === 'Y' && p.completed_missions >= maxMissions) {
+          if ((p.is_basic_only === 'Y' && p.completed_missions >= maxMissions) || (p.is_basic_only === 'N' && p.completed_missions >= (maxMissions+addMissions))) {
             return false;
           }
         }
@@ -367,7 +369,7 @@ export default function ListPage() {
             <span className={`w-3.5 h-3.5 rounded-sm flex items-center justify-center border shrink-0 ${filters.excludeBasicOnly ? 'bg-white text-lime-700 border-white' : 'border-amber-400 bg-white'}`}>
               {filters.excludeBasicOnly && <Check className="w-3 h-3 stroke-[3]" />}
             </span>
-            <span className="truncate">기본 임무만 선택 제외</span>
+            <span className="truncate">임무 횟수 충족 제외</span>
           </button>
 
           {guildSettings?.is_default_mission_enabled === 'Y' ? (
