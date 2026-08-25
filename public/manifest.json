@@ -1,7 +1,7 @@
 {
-  "name": "경쟁전에진심인당신",
-  "short_name": "경진당",
-  "description": "길드원 및 경쟁전 임무 관리를 위한 모바일 웹",
+  "name": "The Cozy 길드관리",
+  "short_name": "길드 관리",
+  "description": "길드원 및 길드전 임무 관리",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FDFBF7",
