@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '경진당(경쟁전에 진심인 당신)',
-  description: '꽃키우기게임 길드 경쟁전 관리 앱',
+  title: 'The Cozy 길드전 관리',
+  description: '보유꽃 & 길드전 관리',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
