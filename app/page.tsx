@@ -22,9 +22,18 @@ export default function LoginPage() {
 
   const router = useRouter();
 
+  // ⭐ [추가됨] 까꿍 전용 도메인으로 접속했을 때 /peekaboo로 자동 리다이렉트
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const host = window.location.host;
+      if (host.includes('cozy-guild-peekaboo')) {
+        router.replace('/peekaboo');
+      }
+    }
+  }, [router]);
+
   // 닉네임 유효성 검사 함수 (특수문자 금지, 완성된 한글 + 자음/모음 + 영문 + 숫자 + 중간 띄어쓰기 허용)
   const isValidNickname = (name: string) => {
-    // 완성된 한글(가-힣), 자음/모음(ㄱ-ㅎ, ㅏ-ㅣ), 영문, 숫자, 공백(Space)만 허용하는 정규식
     const regex = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]+$/;
     return regex.test(name);
   };
@@ -76,7 +85,6 @@ export default function LoginPage() {
       return;
     }
 
-    // 닉네임 특수문자 검증
     if (!isValidNickname(nickname)) {
       setError('닉네임에 특수문자는 사용할 수 없습니다!(한글, 자음/모음, 영어, 숫자, 띄어쓰기만 가능)');
       return;
@@ -127,7 +135,6 @@ export default function LoginPage() {
       return;
     }
 
-    // 길드장 닉네임 특수문자 검증
     if (!isValidNickname(adminNickname)) {
       setRegisterError('닉네임에 특수문자는 사용할 수 없습니다!(한글, 자음/모음, 영어, 숫자, 띄어쓰기만 가능)');
       return;
@@ -144,7 +151,6 @@ export default function LoginPage() {
       return;
     }
 
-    // 새 길드 등록 시 임무 관련 컬럼 기본값('N', 0) 함께 삽입
     const { data: newGuild, error: guildInsertError } = await supabase
       .from('guild_settings')
       .insert([{ 
