@@ -1,363 +1,346 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MessageCircle, PlusCircle, X } from 'lucide-react';
+import { FaLock, FaUsers, FaRegQuestionCircle, FaRocket, FaSeedling, FaUserTag } from 'react-icons/fa';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [guildName, setGuildName] = useState('');
   const [nickname, setNickname] = useState('');
-  const [role, setRole] = useState('멤버');
-  const [error, setError] = useState('');
+  const [password, setPassword] = useState('');
   
-  // 길드명 추천/힌트 관련 상태
-  const [suggestedGuilds, setSuggestedGuilds] = useState<any[]>([]);
+  // 신규 등록 및 최초 비밀번호 설정 시 사용할 입력 상태
+  const [newPassword, setNewPassword] = useState('');
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'register' | 'no_password' | 'error'>('register');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // 길드 등록 팝업 상태
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [newGuildName, setNewGuildName] = useState('');
-  const [newGuildRank, setNewGuildRank] = useState('A');
-  const [adminNickname, setAdminNickname] = useState('');
-  const [registerError, setRegisterError] = useState('');
-
-  const router = useRouter();
-
-  // ⭐ [추가됨] 까꿍 전용 도메인으로 접속했을 때 /peekaboo로 자동 리다이렉트
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const host = window.location.host;
-      if (host.includes('cozy-guild-peekaboo')) {
-        router.replace('/peekaboo');
-      }
-    }
-  }, [router]);
+    const savedGuild = localStorage.getItem('guild_name');
+    const savedNick = localStorage.getItem('user_nickname');
+    const savedPw = localStorage.getItem('guild_password');
+    if (savedGuild) setGuildName(savedGuild);
+    if (savedNick) setNickname(savedNick);
+    if (savedPw) setPassword(savedPw);
+  }, []);
 
-  // 닉네임 유효성 검사 함수 (특수문자 금지, 완성된 한글 + 자음/모음 + 영문 + 숫자 + 중간 띄어쓰기 허용)
-  const isValidNickname = (name: string) => {
-    const regex = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s]+$/;
-    return regex.test(name);
-  };
-
-  // 사용자가 길드명을 입력할 때마다 유사한 길드 조회 (힌트 제공)
-  useEffect(() => {
-    const fetchGuildHints = async () => {
-      if (!guildName.trim()) {
-        setSuggestedGuilds([]);
-        return;
-      }
-
-      const searchKeyword = guildName.trim();
-      const { data } = await supabase
-        .from('guild_settings')
-        .select('guild_name')
-        .ilike('guild_name', `%${searchKeyword}%`)
-        .limit(5);
-
-      if (data && data.length > 0) {
-        const exactMatch = data.some(g => g.guild_name === searchKeyword);
-        if (exactMatch && data.length === 1) {
-          setSuggestedGuilds([]);
-        } else {
-          setSuggestedGuilds(data);
-        }
-      } else {
-        setSuggestedGuilds([]);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      fetchGuildHints();
-    }, 200);
-
-    return () => clearTimeout(timer);
-  }, [guildName]);
-
+  // 로그인 시도 핸들러
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    const trimmedGuildName = guildName.trim();
+    const trimmedNickname = nickname.trim();
 
-    if (!guildName.trim()) {
-      setError('길드명을 입력해 주세요.');
-      return;
-    }
-    if (!nickname.trim()) {
-      setError('닉네임을 입력해 주세요.');
+    if (!trimmedGuildName) {
+      alert('길드명을 입력해주세요.');
       return;
     }
 
-    if (!isValidNickname(nickname)) {
-      setError('닉네임에 특수문자는 사용할 수 없습니다!(한글, 자음/모음, 영어, 숫자, 띄어쓰기만 가능)');
+    if (!trimmedNickname) {
+      alert('닉네임(내 캐릭터명)을 입력해주세요.');
       return;
     }
 
-    const { data: guildData, error: guildError } = await supabase
+    // 1. 길드 존재 여부 확인
+    const { data: guild, error } = await supabase
       .from('guild_settings')
       .select('*')
-      .eq('guild_name', guildName.trim())
-      .maybeSingle();
+      .eq('guild_name', trimmedGuildName)
+      .single();
 
-    if (guildError || !guildData) {
-      setError('존재하지 않는 길드명입니다. 길드명 입력 시 아래 뜨는 추천 힌트를 확인하거나, 맨 아래 [길드 등록하기]를 이용해 주세요.');
+    // 존재하지 않는 길드인 경우 -> 신규 길드 등록 팝업
+    if (error || !guild) {
+      setNewPassword('');
+      setModalType('register');
+      setIsModalOpen(true);
       return;
     }
 
-    const { data: user, error: dbError } = await supabase
+    // 2. profiles 테이블을 조회하여 해당 길드(guild_id)에 입력한 닉네임이 존재하는지 검증
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('guild_id', guildData.id)
-      .eq('nickname', nickname.trim())
+      .eq('guild_id', guild.id)
+      .eq('nickname', trimmedNickname)
       .maybeSingle();
 
-    if (dbError || !user) {
-      setError('해당 길드에 일치하는 닉네임 데이터가 없습니다. 다시 확인해 주세요.');
+    if (profileError || !profileData) {
+      setErrorMessage(`'${trimmedGuildName}' 길드에 등록되지 않은 닉네임입니다. 닉네임을 다시 확인해주세요.`);
+      setModalType('error');
+      setIsModalOpen(true);
       return;
     }
 
-    if (user.role !== role) {
-      setError(`입력하신 닉네임의 실제 직급은 [${user.role}]입니다. 직급을 올바르게 선택해 주세요.`);
+    // 3. 이미 존재하는 길드인 경우 비밀번호 검증
+    if (guild.password) {
+      if (!password) {
+        setErrorMessage('비밀번호가 설정된 길드입니다. 비밀번호를 입력해주세요.');
+        setModalType('error');
+        setIsModalOpen(true);
+        return;
+      }
+      if (guild.password !== password) {
+        setErrorMessage('비밀번호가 일치하지 않습니다.');
+        setModalType('error');
+        setIsModalOpen(true);
+        return;
+      }
+    } else {
+      // 4. 비밀번호가 아예 설정되지 않은 길드 -> 최초 설정 모달 띄우기
+      setNewPassword('');
+      setModalType('no_password');
+      setIsModalOpen(true);
       return;
     }
 
-    sessionStorage.setItem('guild_user', JSON.stringify(user));
-    router.push('/list');
+    // 정상 로그인 처리 및 정보 저장 (user_id도 함께 저장하여 유저별 데이터 연동에 활용)
+    localStorage.setItem('guild_name', trimmedGuildName);
+    localStorage.setItem('user_nickname', trimmedNickname);
+    localStorage.setItem('guild_password', password);
+    localStorage.setItem('guild_id', guild.id.toString());
+    localStorage.setItem('user_id', profileData.id); // profiles 테이블의 uuid
+    router.push('/flowers/select');
   };
 
-  const handleRegisterGuild = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRegisterError('');
-
-    if (!newGuildName.trim()) {
-      setRegisterError('등록할 길드명을 입력해 주세요.');
-      return;
-    }
-    if (!adminNickname.trim()) {
-      setRegisterError('길드장 닉네임을 입력해 주세요.');
-      return;
-    }
-
-    if (!isValidNickname(adminNickname)) {
-      setRegisterError('닉네임에 특수문자는 사용할 수 없습니다!(한글, 자음/모음, 영어, 숫자, 띄어쓰기만 가능)');
-      return;
-    }
-
-    const { data: existingGuild } = await supabase
+  // 신규 길드 생성 핸들러
+  const handleRegisterGuild = async () => {
+    const trimmedName = guildName.trim();
+    const trimmedNickname = nickname.trim();
+    
+    const { data, error } = await supabase
       .from('guild_settings')
-      .select('*')
-      .eq('guild_name', newGuildName.trim())
-      .maybeSingle();
-
-    if (existingGuild) {
-      setRegisterError('이미 존재하는 길드명입니다.');
-      return;
-    }
-
-    const { data: newGuild, error: guildInsertError } = await supabase
-      .from('guild_settings')
-      .insert([{ 
-        guild_name: newGuildName.trim(), 
-        guild_rank: newGuildRank,
-        is_default_mission_enabled: 'N',
-        default_mission_score: 0
-      }])
+      .insert([{ guild_name: trimmedName, password: newPassword }])
       .select()
       .single();
 
-    if (guildInsertError || !newGuild) {
-      console.error(guildInsertError);
-      setRegisterError('길드 생성 중 오류가 발생했습니다.');
+    if (error) {
+      alert('길드 등록 중 오류가 발생했습니다: ' + error.message);
       return;
     }
 
-    const { error: profileInsertError } = await supabase
-      .from('profiles')
-      .insert([{
-        guild_id: newGuild.id,
-        nickname: adminNickname.trim(),
-        role: '길드장',
-        is_basic_only: 'N',
-        is_vip: 'Y',
-        completed_missions: 0,
-        total_mission_score: 0
-      }]);
+    // 신규 길드 생성 시 해당 닉네임을 가진 프로필이 없다면 새로 만들어주거나 연동 처리가 필요할 수 있습니다.
+    // 우선 길드 설정 저장 후 메인으로 이동하도록 처리합니다.
+    localStorage.setItem('guild_name', trimmedName);
+    localStorage.setItem('user_nickname', trimmedNickname);
+    localStorage.setItem('guild_password', newPassword);
+    localStorage.setItem('guild_id', data.id.toString());
+    setIsModalOpen(false);
+    router.push('/flowers/select');
+  };
 
-    if (profileInsertError) {
-      console.error(profileInsertError);
-      setRegisterError('길드장 계정 생성 중 오류가 발생했습니다.');
+  // 비밀번호가 없던 길드에 최초 비밀번호 설정 핸들러
+  const handleSetFirstPassword = async () => {
+    const trimmedName = guildName.trim();
+    const trimmedNickname = nickname.trim();
+
+    if (!newPassword.trim()) {
+      alert('설정할 비밀번호를 입력해주세요.');
       return;
     }
 
-    alert(`[${newGuildName.trim()}] 길드가 성공적으로 등록되었습니다! 생성된 길드명과 닉네임으로 로그인해 주세요.`);
-    setIsRegisterOpen(false);
-    setGuildName(newGuildName.trim());
-    setNewGuildName('');
-    setAdminNickname('');
+    const { data, error } = await supabase
+      .from('guild_settings')
+      .update({ password: newPassword })
+      .eq('guild_name', trimmedName)
+      .select()
+      .single();
+
+    if (error) {
+      alert('비밀번호 설정 중 오류가 발생했습니다: ' + error.message);
+      return;
+    }
+
+    localStorage.setItem('guild_name', trimmedName);
+    localStorage.setItem('user_nickname', trimmedNickname);
+    localStorage.setItem('guild_password', newPassword);
+    localStorage.setItem('guild_id', data.id.toString());
+    setIsModalOpen(false);
+    router.push('/flowers/select');
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#78350F] max-w-md mx-auto flex flex-col justify-center items-center p-4 overflow-x-hidden box-border relative">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAF8F5] p-4 text-slate-700 relative">
       
-      {/* 상단 우측 오픈 카카오톡 문의 버튼 */}
-      <div className="absolute top-4 right-4">
-        <a 
-          href="https://open.kakao.com/o/svKuCxFi" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full border-2 border-amber-200 text-xs font-black text-amber-800 hover:bg-amber-50 shadow-sm transition-all"
-          title="개발자에게 문의하기"
-        >
-          <MessageCircle className="w-4 h-4 text-lime-700" />
-          <span>문의</span>
-        </a>
-      </div>
-
-      <div className="w-full bg-white rounded-3xl shadow-xl border-4 border-lime-600/20 p-6 box-border mt-8">
-        <h1 className="text-3xl font-black text-center text-[#4D7C0F] mb-1">🌸경진당🌸</h1>
-        <p className="text-center text-xs font-bold text-amber-800 mb-6">🔥경쟁전에 진심인 당신의 도우미 v1.1</p>
+      {/* 메인 카드 컨테이너 */}
+      <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl p-8 border border-stone-100/80 relative">
         
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div className="relative">
-            <label className="block text-sm font-extrabold mb-1">✒️길드명</label>
-            <input 
-              type="text" 
-              placeholder="길드명을 입력해 주세요"
-              value={guildName} 
-              onChange={(e) => setGuildName(e.target.value)}
-              className="w-full p-3.5 bg-white border-2 border-amber-200 rounded-2xl text-amber-900 font-black text-center text-base focus:border-lime-700 focus:outline-none"
-              autoComplete="off"
-            />
+        {/* 상단 우측 문의 버튼 */}
+        <div className="absolute top-5 right-5">
+          <a
+            href="https://open.kakao.com/o/svKuCxFi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 bg-stone-50 px-3 py-1.5 rounded-full text-xs font-medium text-slate-500 shadow-xs hover:bg-stone-100 transition border border-stone-200/60"
+          >
+            <FaRegQuestionCircle className="text-amber-400 text-xs" />
+            문의
+          </a>
+        </div>
 
-            {suggestedGuilds.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-1 bg-white border-2 border-amber-200 rounded-2xl shadow-lg z-20 overflow-hidden">
-                <p className="px-3 py-1.5 text-[10px] font-black text-amber-700 bg-amber-50 border-b border-amber-100">
-                  💡 혹시 이 길드를 찾으시나요?
-                </p>
-                {suggestedGuilds.map((g, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setGuildName(g.guild_name);
-                      setSuggestedGuilds([]);
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-amber-900 hover:bg-lime-50 transition-colors border-b border-amber-50 last:border-b-0"
-                  >
-                    ✨ {g.guild_name}
-                  </button>
-                ))}
-              </div>
-            )}
+        {/* 로고 및 타이틀 섹션 */}
+        <div className="text-center mb-8 mt-2">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-pink-50 text-pink-400 text-2xl mb-3 shadow-inner">
+            <FaSeedling />
           </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-800">길드해</h1>
+          <p className="text-xs text-slate-400 mt-1">길드원들과 함께하는 꽃 도감 & 길드전</p>
+        </div>
 
-          <div>
-            <label className="block text-sm font-extrabold mb-1">✨직위 선택</label>
-            <div className="grid grid-cols-5 gap-1 bg-amber-50 p-1.5 rounded-2xl border-2 border-amber-200">
-              {['길드장', '부길드장', '임원', '정예', '멤버'].map((r) => (
-                <label key={r} className={`flex flex-col items-center py-2 px-0.5 cursor-pointer rounded-xl text-xs font-black gap-1 transition-colors ${
-                  role === r ? 'bg-lime-100 text-lime-900' : 'text-amber-900'
-                }`}>
-                  <input 
-                    type="radio" 
-                    name="role" 
-                    value={r} 
-                    checked={role === r} 
-                    onChange={(e) => setRole(e.target.value)}
-                    className="accent-lime-700 w-3.5 h-3.5"
-                  />
-                  <span className="text-[11px]">{r}</span>
-                </label>
-              ))}
+        {/* 로그인 폼 */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-500 ml-1">길드명</label>
+            <div className="relative">
+              <FaUsers className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 text-sm" />
+              <input
+                type="text"
+                value={guildName}
+                onChange={(e) => setGuildName(e.target.value)}
+                placeholder="길드명을 입력하세요"
+                className="w-full pl-10 pr-4 py-3 bg-stone-50/70 rounded-xl focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none text-sm text-slate-800 transition-all border border-stone-200/60"
+                required
+              />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-extrabold mb-1">⭐닉네임</label>
-            <input 
-              type="text" 
-              placeholder="닉네임을 정확히 입력해 주세요" 
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="w-full p-3.5 border-2 border-amber-200 rounded-2xl focus:border-lime-700 focus:outline-none text-base text-center font-bold bg-white"
-            />
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-500 ml-1">닉네임 (내 캐릭터명)</label>
+            <div className="relative">
+              <FaUserTag className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 text-sm" />
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="게임 내 닉네임을 입력하세요"
+                className="w-full pl-10 pr-4 py-3 bg-stone-50/70 rounded-xl focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none text-sm text-slate-800 transition-all border border-stone-200/60"
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-500 ml-1">길드 공용 비밀번호</label>
+            <div className="relative">
+              <FaLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 text-sm" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호 (없을 시 생략)"
+                className="w-full pl-10 pr-4 py-3 bg-stone-50/70 rounded-xl focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none text-sm text-slate-800 transition-all border border-stone-200/60"
+              />
+            </div>
           </div>
 
-          {error && <p className="text-red-500 text-xs font-extrabold text-center bg-red-50 p-2.5 rounded-xl border border-red-200">{error}</p>}
-
-          <button type="submit" className="w-full py-4 bg-lime-700 text-white rounded-2xl font-black text-xl hover:bg-lime-800 shadow-md transition-all">
-            입장하기
-          </button>
+          <div className="pt-1 space-y-2">
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-2 bg-[#E88DA5] text-white font-medium py-3.5 rounded-xl hover:bg-[#DE7A95] transition-all shadow-md shadow-pink-100 active:scale-[0.98] text-sm cursor-pointer"
+            >
+              <FaRocket className="text-xs" />
+              접속하기
+            </button>
+          </div>
         </form>
-
-        <div className="mt-4 text-center">
-          <button 
-            type="button"
-            onClick={() => setIsRegisterOpen(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-extrabold text-amber-700 hover:text-lime-700 transition-colors"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>우리 길드가 없다면? 길드 등록하기🔥</span>
-          </button>
-        </div>
       </div>
 
-      {isRegisterOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl shadow-2xl border-4 border-lime-600/30 p-6 w-full max-w-sm relative animate-fadeIn">
-            <button 
-              onClick={() => setIsRegisterOpen(false)}
-              className="absolute top-4 right-4 text-amber-800 hover:text-red-500 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
+      {/* 모달 팝업 영역 */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center shadow-2xl border border-stone-100">
+            
+            {/* 1. 신규 길드 등록 모달 */}
+            {modalType === 'register' && (
+              <>
+                <div className="w-12 h-12 rounded-2xl bg-pink-50 text-pink-400 flex items-center justify-center mx-auto mb-3 text-xl shadow-inner">✨</div>
+                <h3 className="text-lg font-bold mb-2 text-slate-800">신규 길드 등록</h3>
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                  존재하지 않는 길드명입니다.<br/>사용할 비밀번호를 입력하고 등록하세요!
+                </p>
+                
+                <div className="mb-4 text-left">
+                  <label className="block text-xs font-semibold text-slate-500 ml-1 mb-1">새 비밀번호 설정</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="사용할 비밀번호 입력"
+                    className="w-full px-4 py-2.5 bg-stone-50 rounded-xl outline-none text-xs border border-stone-200 focus:ring-2 focus:ring-pink-200"
+                  />
+                </div>
 
-            <h2 className="text-2xl font-black text-[#4D7C0F] mb-1 text-center">🏰 새 길드 등록</h2>
-            <p className="text-center text-xs font-bold text-amber-800 mb-4">길드 정보를 입력하여 새 공간을 만드세요.</p>
+                <div className='flex gap-2'>
+                   <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 bg-stone-100 text-slate-600 font-medium py-2.5 rounded-xl hover:bg-stone-200 transition text-xs cursor-pointer"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleRegisterGuild}
+                    className="flex-1 bg-[#E88DA5] text-white font-medium py-2.5 rounded-xl hover:bg-[#DE7A95] transition text-xs shadow-sm shadow-pink-100 cursor-pointer"
+                  >
+                    등록 및 접속
+                  </button>
+                </div>
+              </>
+            )}
 
-            <form onSubmit={handleRegisterGuild} className="space-y-3">
-              <div>
-                <label className="block text-xs font-extrabold mb-1">길드명</label>
-                <input 
-                  type="text" 
-                  placeholder="등록할 길드명 입력"
-                  value={newGuildName}
-                  onChange={(e) => setNewGuildName(e.target.value)}
-                  className="w-full p-3 border-2 border-amber-200 rounded-xl text-sm font-bold focus:outline-none focus:border-lime-700"
-                />
-              </div>
+            {/* 2. 비밀번호 미설정 길드 최초 등록 모달 */}
+            {modalType === 'no_password' && (
+              <>
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-400 flex items-center justify-center mx-auto mb-3 text-xl shadow-inner">🔒</div>
+                <h3 className="text-lg font-bold mb-2 text-slate-800">비밀번호 최초 등록</h3>
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                  이 길드는 아직 비밀번호가 없습니다.<br/>사용하실 비밀번호를 설정해주세요!
+                </p>
+                
+                <div className="mb-4 text-left">
+                  <label className="block text-xs font-semibold text-slate-500 ml-1 mb-1">최초 비밀번호 설정</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="새 비밀번호 입력"
+                    className="w-full px-4 py-2.5 bg-stone-50 rounded-xl outline-none text-xs border border-stone-200 focus:ring-2 focus:ring-pink-200"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-extrabold mb-1">길드 랭크 (기본)</label>
-                <select 
-                  value={newGuildRank}
-                  onChange={(e) => setNewGuildRank(e.target.value)}
-                  className="w-full p-3 border-2 border-amber-200 rounded-xl text-sm font-bold bg-white focus:outline-none focus:border-lime-700"
+                <div className='flex gap-2'>
+                   <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 bg-stone-100 text-slate-600 font-medium py-2.5 rounded-xl hover:bg-stone-200 transition text-xs cursor-pointer"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleSetFirstPassword}
+                    className="flex-1 bg-[#E88DA5] text-white font-medium py-2.5 rounded-xl hover:bg-[#DE7A95] transition text-xs shadow-sm shadow-pink-100 cursor-pointer"
+                  >
+                    설정하고 접속
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* 3. 에러 발생 모달 */}
+            {modalType === 'error' && (
+              <>
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-400 flex items-center justify-center mx-auto mb-3 text-xl shadow-inner">⚠️</div>
+                <h3 className="text-lg font-bold mb-2 text-rose-600">접속 오류</h3>
+                <p className="text-xs text-rose-600 mb-6 leading-relaxed bg-rose-50/50 p-3 rounded-xl border border-rose-100">
+                  {errorMessage}
+                </p>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-full bg-stone-100 text-slate-600 font-medium py-2.5 rounded-xl hover:bg-stone-200 transition text-xs cursor-pointer"
                 >
-                  <option value="A">A 랭크</option>
-                  <option value="B">B 랭크</option>
-                  <option value="C">C 랭크</option>
-                  <option value="D">D 랭크</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold mb-1">길드장 닉네임</label>
-                <input 
-                  type="text" 
-                  placeholder="대표(길드장) 닉네임 입력"
-                  value={adminNickname}
-                  onChange={(e) => setAdminNickname(e.target.value)}
-                  className="w-full p-3 border-2 border-amber-200 rounded-xl text-sm font-bold focus:outline-none focus:border-lime-700"
-                />
-              </div>
-
-              {registerError && <p className="text-red-500 text-xs font-extrabold text-center bg-red-50 p-2 rounded-xl border border-red-200">{registerError}</p>}
-
-              <button 
-                type="submit" 
-                className="w-full py-3.5 bg-lime-700 text-white rounded-xl font-black text-base hover:bg-lime-800 shadow-md transition-all mt-2"
-              >
-                길드 등록 완료
-              </button>
-            </form>
+                  확인
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

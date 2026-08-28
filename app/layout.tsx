@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'The Cozy 길드전 관리',
-  description: '보유꽃 & 길드전 관리',
+  title: '코지 길드해',
+  description: '보유 꽃 & 길드전 관리',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: '길드앱',
+    title: '길드해',
   },
 };
 
