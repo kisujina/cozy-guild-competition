@@ -4,12 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import NavigationLayout from '@/components/NavigationLayout';
-import { FaBullhorn, FaPlus, FaLock, FaTimes, FaEdit, FaTrashAlt, FaChevronRight, FaSearch } from 'react-icons/fa';
+import { FaBullhorn, FaPlus, FaLock, FaTimes, FaEdit, FaTrashAlt, FaChevronRight, FaSearch, FaSpinner } from 'react-icons/fa';
 
 export default function GuildNoticesPage() {
   const router = useRouter();
   const [guildId, setGuildId] = useState<number | null>(null);
   const [notices, setNotices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // 로딩 상태 추가
   const [searchInput, setSearchInput] = useState(''); // 입력창 값
   const [searchQuery, setSearchQuery] = useState(''); // 엔터/검색 시 확정되는 검색어
 
@@ -42,12 +43,14 @@ export default function GuildNoticesPage() {
   }, [router]);
 
   const fetchNotices = async (gId: number) => {
+    setIsLoading(true);
     const { data, error } = await supabase
       .from('guild_notices')
       .select('*')
       .eq('guild_id', gId)
       .order('created_at', { ascending: false });
     if (!error && data) setNotices(data);
+    setIsLoading(false);
   };
 
   // 공지 등록/수정 핸들러
@@ -152,10 +155,12 @@ export default function GuildNoticesPage() {
 
   return (
     <NavigationLayout>
-      <div className="px-4 space-y-4 animate-in fade-in duration-200 pb-10">
+      {/* 전체 레이아웃 고정 및 하단 여백 추가 */}
+      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden overscroll-none px-4 pb-24 space-y-4 animate-in fade-in duration-200">
         
-        {/* 상단 통합 배너 (제목, 작성 버튼, 검색창 결합) */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-stone-200/80 space-y-3.5">
+        {/* 상단 고정 영역 (통합 배너: 제목, 작성 버튼, 검색창 결합) */}
+        <div className="shrink-0 bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-stone-200/80 space-y-3.5 relative overflow-hidden">
+          
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-2xs shrink-0">
@@ -164,6 +169,9 @@ export default function GuildNoticesPage() {
               <div className="min-w-0">
                 <h2 className="text-xs sm:text-sm font-extrabold text-stone-900 tracking-tight flex items-center gap-2">
                   길드 공지사항
+                  {isLoading && (
+                    <FaSpinner className="animate-spin text-amber-500 text-xs" />
+                  )}
                 </h2>
                 <p className="text-[11px] text-stone-500 font-medium mt-0.5 truncate">길드원들에게 전달할 소식과 일정을 확인하세요.</p>
               </div>
@@ -215,9 +223,13 @@ export default function GuildNoticesPage() {
           </form>
         </div>
 
-        {/* 공지사항 심플 리스트 */}
-        <div className="space-y-2.5">
-          {filteredNotices.length === 0 ? (
+        {/* 공지사항 심플 리스트 (스크롤 가능한 본문 영역) */}
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1 pb-16" style={{ scrollbarWidth: 'none' }}>
+          {isLoading ? (
+            <div className="text-center py-16 text-stone-400 text-xs bg-white rounded-2xl border border-stone-200/80 shadow-xs font-medium flex items-center justify-center gap-2">
+              <FaSpinner className="animate-spin text-amber-500 text-sm" /> 공지사항을 불러오는 중...
+            </div>
+          ) : filteredNotices.length === 0 ? (
             <div className="text-center py-16 text-stone-400 text-xs bg-white rounded-2xl border border-stone-200/80 shadow-xs font-medium">
               {searchQuery ? '검색 결과가 없습니다.' : '등록된 공지사항이 없습니다.'}
             </div>
@@ -324,7 +336,7 @@ export default function GuildNoticesPage() {
               className="bg-white rounded-[28px] p-6 max-w-sm w-full shadow-2xl border border-stone-100 space-y-4"
             >
               <div className="flex justify-between items-center">
-                <h3 className="text-sm font-extrabold text-stone-900">{editingNotice ? '공지사항 수정' : '새 공지사항 등록'}</h3>
+                <h3 className="text-sm font-extrabold text-stone-900">{editingNotice ? '✨공지사항 수정' : '✨새 공지사항 등록'}</h3>
                 <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-all cursor-pointer">
                   <FaTimes className="text-xs" />
                 </button>

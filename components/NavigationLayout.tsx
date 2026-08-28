@@ -18,6 +18,18 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
   const [isNoticeOpen, setIsNoticeOpen] = useState(false);
   const [hasUnreadNotice, setHasUnreadNotice] = useState(true);
 
+  // 모달이 열려있을 때 배경 페이지 전체 스크롤 방지
+  useEffect(() => {
+    if (isNoticeOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isNoticeOpen]);
+
   useEffect(() => {
     setGuildName(localStorage.getItem('guild_name') || '');
     setNickname(localStorage.getItem('user_nickname') || '');
@@ -134,6 +146,9 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
           <div 
             className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
             onClick={() => setIsNoticeOpen(false)}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onScroll={(e) => e.stopPropagation()}
           >
             <div 
               className="bg-[#FFFDF9] rounded-[28px] p-5 max-w-md w-full max-h-[88vh] overflow-y-auto shadow-2xl border border-purple-100 space-y-4 relative"
@@ -147,7 +162,7 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                 </h2>
                 <button 
                   onClick={() => setIsNoticeOpen(false)}
-                  className="text-stone-400 hover:text-stone-600 p-1"
+                  className="text-stone-400 hover:text-stone-600 p-1 cursor-pointer"
                 >
                   ✕
                 </button>
@@ -189,7 +204,7 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>길드 공지사항에서 길드 공지 업로드 기능 추가</span>
+                      <span><strong>[공지사항]</strong>에서 길드 공지 업로드 기능 추가</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
