@@ -208,10 +208,14 @@ export default function GuildTasksPage() {
 
     if (!error && data) {
       const sorted = data.sort((a, b) => {
+        const scoreA = (a.flowers?.score || 0) + (a.extra_score || 0);
+        const scoreB = (b.flowers?.score || 0) + (b.extra_score || 0);
+        if (scoreA !== scoreB) {
+          return scoreB - scoreA;
+        }
         const gradeA = GRADE_ORDER[a.flowers?.grade?.toUpperCase()] || 0;
         const gradeB = GRADE_ORDER[b.flowers?.grade?.toUpperCase()] || 0;
-        if (gradeA !== gradeB) return gradeB - gradeA;
-        return (b.flowers?.score || 0) - (a.flowers?.score || 0);
+        return gradeB - gradeA;
       });
       setMemberFlowers(sorted);
     } else {
