@@ -167,6 +167,12 @@ export default function GuildTasksPage() {
         if (weightA !== weightB) {
           return weightB - weightA;
         }
+        // 직급이 같을 경우 닉네임 오름차순(가나다순) 정렬
+        const nameA = a.nickname || '';
+        const nameB = b.nickname || '';
+        if (nameA !== nameB) {
+          return nameA.localeCompare(nameB, 'ko-KR');
+        }
         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       });
 
