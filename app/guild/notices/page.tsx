@@ -42,6 +42,18 @@ export default function GuildNoticesPage() {
     fetchNotices(gIdNum);
   }, [router]);
 
+    // 모달이 열려있을 때 배경 페이지 전체 스크롤 방지
+    useEffect(() => {
+      if (selectedDetailNotice) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'unset';
+      }
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }, [selectedDetailNotice]);
+
   const fetchNotices = async (gId: number) => {
     setIsLoading(true);
     const { data, error } = await supabase

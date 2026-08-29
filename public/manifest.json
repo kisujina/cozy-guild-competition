@@ -1,7 +1,7 @@
 {
   "name": "The Cozy 길드관리",
-  "short_name": "길드 관리",
-  "description": "길드원 및 길드전 임무 관리",
+  "short_name": "길드해",
+  "description": "코지 길드 관리",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FDFBF7",
