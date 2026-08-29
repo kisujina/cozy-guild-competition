@@ -434,7 +434,8 @@ export default function FlowerSelectPage() {
         </div>
 
         {/* 꽃 검색 결과 리스트 영역 */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 pb-24 overscroll-none">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 pb-24 overscroll-none [&::-webkit-scrollbar]:hidden"
+             style={{ scrollbarWidth: 'none' }}>
           {isLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
               <FaSpinner className="animate-spin text-3xl text-pink-500" />

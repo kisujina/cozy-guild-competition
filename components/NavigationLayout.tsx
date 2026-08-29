@@ -39,20 +39,18 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
     if (readNoticeVersion === 'v1.0') {
       setHasUnreadNotice(false);
     }
-
   }, []);
 
   const handleOpenNotice = () => {
     setIsNoticeOpen(true);
     if (hasUnreadNotice) {
       setHasUnreadNotice(false);
-      localStorage.setItem('read_notice_version', 'v1.0'); // 최신 공지 버전 저장
+      localStorage.setItem('read_notice_version', 'v1.0');
     }
   };
 
   const handleLogout = () => { 
-    //localStorage.clear(); 
-    localStorage.removeItem('read_notice_version');//공지알림만 초기화
+    localStorage.removeItem('read_notice_version');
     router.push('/'); 
   };
   
@@ -62,15 +60,11 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
   };
 
   return (
-    
     <div className="min-h-screen bg-[#FAF8F5] text-stone-700 selection:bg-pink-100 selection:text-pink-700 font-sans flex flex-col items-center">
-      {/* 모바일 뷰어용 컨테이너 넓이 고정 */}
       <div className="w-full max-w-md relative flex flex-col min-h-screen bg-[#FAF8F5] shadow-sm">
         
-        {/* ============================== */}
-        {/* 1. 상단 앱 바 (스크롤시 상단 고정) */}
-        {/* ============================== */}
-        <header className="fixed top-0 left-0 right-0 max-w-md mx-auto z-40 bg-white/85 backdrop-blur-md border-b border-stone-200/60 px-4 py-3 flex items-center justify-between shadow-xs">
+        {/* 1. 상단 앱 바 */}
+        <header className="fixed top-0 left-0 right-0 max-w-md mx-auto z-30 bg-white/85 backdrop-blur-md border-b border-stone-200/60 px-4 py-3 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-pink-50 text-pink-400 flex items-center justify-center shadow-inner">
               <FaSeedling className="text-lg" />
@@ -81,14 +75,12 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
             </div>
           </div>
           <div className="flex items-center gap-2">
-            { /* 공지사항 아이콘 버튼 */}
             <button
-              onClick={handleOpenNotice} // 4. 수정된 함수 연결
-              className="relative p-2 text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+              onClick={handleOpenNotice}
+              className="relative p-2 text-stone-600 hover:bg-stone-100 rounded-full transition-colors cursor-pointer"
               aria-label="공지사항"
             >
               <FaBell className="w-5 h-5" />
-              {/* 5. 안 읽었을 때만 빨간 점 노출 */}
               {hasUnreadNotice && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
               )}
@@ -105,18 +97,13 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
           </div>
         </header>
 
-        {/* ============================== */}
-        {/* 2. 메인 콘텐츠 (스크롤 되는 영역) */}
-        {/* ============================== */}
-        {/* pt-[76px]로 상단바 가림 방지, pb-[80px]로 하단바 가림 방지 */}
+        {/* 2. 메인 콘텐츠 */}
         <main className="flex-1 w-full pt-[76px] pb-[80px]">
           {children}
         </main>
 
-        {/* ============================== */}
-        {/* 3. 하단 네비게이션 (스크롤시 하단 고정) */}
-        {/* ============================== */}
-        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-stone-200/60 px-6 py-2.5 flex items-center justify-around z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+        {/* 3. 하단 네비게이션 (z-index를 30으로 낮추고, 공지 모달이 열릴 때는 클릭 방지) */}
+        <nav className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-stone-200/60 px-6 py-2.5 flex items-center justify-around z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] transition-opacity ${isNoticeOpen ? 'pointer-events-none opacity-40' : ''}`}>
           <Link 
             href="/flowers/select" 
             className={`flex flex-col items-center gap-1 transition cursor-pointer ${pathname.includes('/flowers') ? 'text-pink-500 font-bold' : 'text-stone-400 hover:text-stone-600'}`}
@@ -139,9 +126,8 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
             <span className="text-[10px]">공지사항</span>
           </Link>
         </nav>
-        {/* ============================== */}
-        {/* 4. 공지사항 모달 (컨테이너 내부 최하단에 위치) */}
-        {/* ============================== */}
+
+        {/* 4. 공지사항 모달 (z-index를 50으로 확실히 부여하여 최상단 위치) */}
         {isNoticeOpen && (
           <div 
             className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
@@ -180,7 +166,6 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                   </p>
                 </div>
 
-                {/* 추가된 사항 */}
                 <div className="space-y-2">
                   <h4 className="font-bold text-xs text-[#6e56cf] uppercase tracking-wider flex items-center gap-1">
                     <span>✨ 추가된 사항</span>
@@ -217,7 +202,6 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                   </ul>
                 </div>
 
-                {/* 삭제된 사항 */}
                 <div className="space-y-2 pt-1 border-t border-stone-200/40">
                   <h4 className="font-bold text-xs text-rose-500 uppercase tracking-wider flex items-center gap-1">
                     <span>🗑️ 삭제된 사항</span>
@@ -235,7 +219,6 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                 </div>
               </div>
 
-              {/* 확인 버튼 */}
               <div className="pt-2">
                 <button
                   onClick={() => setIsNoticeOpen(false)}
@@ -249,6 +232,5 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
         )}
       </div>
     </div>
-    
   );
 }
