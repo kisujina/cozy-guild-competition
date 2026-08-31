@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import NavigationLayout from '@/components/NavigationLayout';
@@ -10,21 +10,37 @@ export default function GuildNoticesPage() {
   const router = useRouter();
   const [guildId, setGuildId] = useState<number | null>(null);
   const [notices, setNotices] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // 로딩 상태 추가
-  const [searchInput, setSearchInput] = useState(''); // 입력창 값
-  const [searchQuery, setSearchQuery] = useState(''); // 엔터/검색 시 확정되는 검색어
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // 공지 작성/수정 모달 상태
+ // 스크롤 방향 및 앱바 노출 상태 감지용
+  const [isAppbarVisible, setIsAppbarVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+        setIsAppbarVisible(false);
+      } else if (currentScrollY < lastScrollY.current) {
+        setIsAppbarVisible(true);
+      }
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNotice, setEditingNotice] = useState<any | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
 
-  // 상세 보기 모달 상태
   const [selectedDetailNotice, setSelectedDetailNotice] = useState<any | null>(null);
 
-  // 비밀번호 확인 모달 (수정/삭제용)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [targetAction, setTargetAction] = useState<'edit' | 'delete' | null>(null);
   const [selectedNoticeItem, setSelectedNoticeItem] = useState<any | null>(null);
@@ -42,17 +58,16 @@ export default function GuildNoticesPage() {
     fetchNotices(gIdNum);
   }, [router]);
 
-    // 모달이 열려있을 때 배경 페이지 전체 스크롤 방지
-    useEffect(() => {
-      if (selectedDetailNotice) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = 'unset';
-      }
-      return () => {
-        document.body.style.overflow = 'unset';
-      };
-    }, [selectedDetailNotice]);
+  useEffect(() => {
+    if (selectedDetailNotice) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedDetailNotice]);
 
   const fetchNotices = async (gId: number) => {
     setIsLoading(true);
@@ -65,7 +80,6 @@ export default function GuildNoticesPage() {
     setIsLoading(false);
   };
 
-  // 공지 등록/수정 핸들러
   const handleSaveNotice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guildId || !title.trim() || !content.trim()) {
@@ -110,7 +124,6 @@ export default function GuildNoticesPage() {
     fetchNotices(guildId);
   };
 
-  // 비밀번호 확인 후 수정/삭제 분기 실행
   const handleVerifyPasswordAction = () => {
     if (!selectedNoticeItem) return;
 
@@ -144,19 +157,17 @@ export default function GuildNoticesPage() {
     }
   };
 
-  // 엔터 키 입력 시 검색 실행
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchQuery(searchInput);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 검색 초기화
   const handleClearSearch = () => {
     setSearchInput('');
     setSearchQuery('');
   };
 
-  // 확정된 검색어(searchQuery)를 기준으로 필터링
   const filteredNotices = notices.filter((notice) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
@@ -167,13 +178,13 @@ export default function GuildNoticesPage() {
 
   return (
     <NavigationLayout>
-      {/* 전체 레이아웃 고정 및 하단 여백 추가 */}
-      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden overscroll-none px-4 pb-24 space-y-4 animate-in fade-in duration-200">
+      <div className="flex flex-col min-h-screen px-4 pb-28 space-y-4 animate-in fade-in duration-200">
         
-        {/* 상단 고정 영역 (통합 배너: 제목, 작성 버튼, 검색창 결합) */}
-        <div className="shrink-0 bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-stone-200/80 space-y-3.5 relative overflow-hidden">
-          
-          <div className="flex items-center justify-between gap-2">
+        {/* 상단 고정 영역: 배경 카드 박스를 제거하여 본문 배경과 자연스럽게 이어지도록 처리 */}
+        <div className={`sticky z-20 pt-4 pb-3 space-y-3.5 bg-stone-50/90 backdrop-blur-md transition-all duration-200 ${
+          isAppbarVisible ? 'top-16' : 'top-0'
+        }`}>
+          <div className="flex items-center justify-between gap-2 px-1">
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-2xs shrink-0">
                 <FaBullhorn className="text-xs" />
@@ -203,9 +214,8 @@ export default function GuildNoticesPage() {
             </button>
           </div>
 
-          {/* 통합된 검색창 (엔터 검색 지원) */}
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
+          <form onSubmit={handleSearchSubmit} className="relative px-1">
+            <span className="absolute inset-y-0 left-4 pl-3.5 flex items-center pointer-events-none text-stone-400">
               <FaSearch className="text-xs" />
             </span>
             <input
@@ -213,9 +223,9 @@ export default function GuildNoticesPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="제목 또는 내용 입력 후 엔터를 누르세요"
-              className="w-full pl-9 pr-16 py-2.5 bg-stone-50 rounded-xl outline-none text-xs font-medium border border-stone-200/85 focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all text-stone-800 placeholder-stone-400"
+              className="w-full pl-9 pr-16 py-2.5 bg-white rounded-xl outline-none text-xs font-medium border border-stone-200/85 focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all text-stone-800 placeholder-stone-400 shadow-2xs"
             />
-            <div className="absolute inset-y-0 right-0 pr-2 flex items-center gap-1">
+            <div className="absolute inset-y-0 right-1 pr-2 flex items-center gap-1">
               {searchInput && (
                 <button
                   type="button"
@@ -235,8 +245,8 @@ export default function GuildNoticesPage() {
           </form>
         </div>
 
-        {/* 공지사항 심플 리스트 (스크롤 가능한 본문 영역) */}
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1 pb-16" style={{ scrollbarWidth: 'none' }}>
+        {/* 본문 영역 */}
+        <div className="flex-1 space-y-2.5 relative">
           {isLoading ? (
             <div className="text-center py-16 text-stone-400 text-xs bg-white rounded-2xl border border-stone-200/80 shadow-xs font-medium flex items-center justify-center gap-2">
               <FaSpinner className="animate-spin text-amber-500 text-sm" /> 공지사항을 불러오는 중...
@@ -276,7 +286,7 @@ export default function GuildNoticesPage() {
           )}
         </div>
 
-        {/* [모달 1] 공지 상세 보기 모달 */}
+        {/* 상세 보기 모달 */}
         {selectedDetailNotice && (
           <div 
             onClick={() => setSelectedDetailNotice(null)}
@@ -337,7 +347,7 @@ export default function GuildNoticesPage() {
           </div>
         )}
 
-        {/* [모달 2] 공지 작성 / 수정 모달 */}
+        {/* 작성 / 수정 모달 */}
         {isModalOpen && (
           <div 
             onClick={() => setIsModalOpen(false)}
@@ -348,7 +358,7 @@ export default function GuildNoticesPage() {
               className="bg-white rounded-[28px] p-6 max-w-sm w-full shadow-2xl border border-stone-100 space-y-4"
             >
               <div className="flex justify-between items-center">
-                <h3 className="text-sm font-extrabold text-stone-900">{editingNotice ? '✨공지사항 수정' : '✨새 공지사항 등록'}</h3>
+                <h3 className="text-sm font-extrabold text-stone-900">{editingNotice ? '공지사항 수정' : '새 공지사항 등록'}</h3>
                 <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-all cursor-pointer">
                   <FaTimes className="text-xs" />
                 </button>
@@ -402,7 +412,7 @@ export default function GuildNoticesPage() {
           </div>
         )}
 
-        {/* [모달 3] 비밀번호 확인 모달 (수정/삭제 시) */}
+        {/* 비밀번호 확인 모달 */}
         {isPasswordModalOpen && (
           <div 
             onClick={() => setIsPasswordModalOpen(false)}

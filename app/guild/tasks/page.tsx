@@ -1,57 +1,57 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import NavigationLayout from '@/components/NavigationLayout';
 import { 
   FaUsers, FaUserPlus, FaSearch, FaTrashAlt, 
   FaEdit, FaSeedling, FaTimes, 
-  FaListUl, FaCheckCircle, FaTimesCircle, FaPlus, FaMinus, FaChevronDown, FaChevronUp, FaCheck,
+  FaListUl, FaCheckCircle, FaTimesCircle, FaChevronDown, FaChevronUp, FaCheck,
   FaExclamationTriangle
 } from 'react-icons/fa';
 
-// [등급 & 상태 스타일 정의]
+// [등급 & 상태 스타일 정의 생략 - 기존과 동일]
 const getGradeBadgeColor = (grade: string) => {
   const g = grade?.toUpperCase() || '';
-  if (g === 'UR+' || g === 'UR') return 'bg-pink-100 text-pink-700 border-pink-200';
-  if (g === 'SSR') return 'bg-amber-100 text-amber-800 border-amber-200';
-  if (g === 'SR+' || g === 'SR') return 'bg-purple-100 text-purple-700 border-purple-200';
-  if (g === 'R') return 'bg-sky-100 text-sky-700 border-sky-200';
-  if (g === 'N') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-  return 'bg-stone-100 text-stone-600 border-stone-200';
+  if (g === 'UR+' || g === 'UR') return 'text-pink-600 font-extrabold';
+  if (g === 'SSR') return 'text-amber-600 font-extrabold';
+  if (g === 'SR+' || g === 'SR') return 'text-purple-600 font-extrabold';
+  if (g === 'R') return 'text-sky-600 font-extrabold';
+  if (g === 'N') return 'text-emerald-600 font-extrabold';
+  return 'text-stone-600 font-extrabold';
 };
 
 const getStatusBadgeStyle = (status: string) => {
   switch (status) {
     case '진행':
-    case '임무 진행': return 'bg-blue-100 text-blue-700 border-blue-200';
+    case '임무 진행': return 'text-blue-600 font-extrabold';
     case '중단':
-    case '임무 중단': return 'bg-rose-100 text-rose-700 border-rose-200';
+    case '임무 중단': return 'text-rose-600 font-extrabold';
     case '완료':
-    case '임무 완료': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    default: return 'bg-stone-100 text-stone-600 border-stone-200';
+    case '임무 완료': return 'text-emerald-600 font-extrabold';
+    default: return 'text-stone-600 font-extrabold';
   }
 };
 
 const getRoleStyle = (role: string, isSelected: boolean = false) => {
   if (isSelected) {
     switch (role) {
-      case '길드장': return 'bg-purple-600 text-white border-purple-600 shadow-xs';
-      case '부길드장': return 'bg-pink-600 text-white border-pink-600 shadow-xs';
-      case '임원': return 'bg-yellow-500 text-white border-yellow-500 shadow-xs';
-      case '정예': return 'bg-teal-600 text-white border-teal-600 shadow-xs';
-      case '멤버': return 'bg-stone-500 text-white border-stone-500 shadow-xs';
-      default: return 'bg-stone-800 text-white border-stone-800 shadow-xs';
+      case '길드장': return 'bg-purple-600 text-white shadow-xs';
+      case '부길드장': return 'bg-pink-600 text-white shadow-xs';
+      case '임원': return 'bg-yellow-500 text-white shadow-xs';
+      case '정예': return 'bg-teal-600 text-white shadow-xs';
+      case '멤버': return 'bg-stone-500 text-white shadow-xs';
+      default: return 'bg-stone-800 text-white shadow-xs';
     }
   }
   switch (role) {
-    case '길드장': return 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100';
-    case '부길드장': return 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100';
-    case '임원': return 'bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100';
-    case '정예': return 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100';
-    case '멤버': return 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200';
-    default: return 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100';
+    case '길드장': return 'text-purple-600 font-extrabold hover:bg-purple-50';
+    case '부길드장': return 'text-pink-600 font-extrabold hover:bg-pink-50';
+    case '임원': return 'text-yellow-700 font-extrabold hover:bg-yellow-50';
+    case '정예': return 'text-teal-600 font-extrabold hover:bg-teal-50';
+    case '멤버': return 'text-stone-600 font-extrabold hover:bg-stone-100';
+    default: return 'text-stone-500 font-extrabold hover:bg-stone-100';
   }
 };
 
@@ -59,24 +59,24 @@ const getFlowerGradeChipStyle = (gradeKey: string, isSelected: boolean) => {
   if (isSelected) {
     switch (gradeKey) {
       case 'UR+':
-      case 'UR': return 'bg-pink-500 text-white border-pink-500 shadow-xs';
-      case 'SSR': return 'bg-amber-400 text-stone-900 border-amber-400 shadow-xs font-extrabold';
+      case 'UR': return 'bg-pink-500 text-white shadow-xs';
+      case 'SSR': return 'bg-amber-400 text-stone-900 shadow-xs font-extrabold';
       case 'SR+':
-      case 'SR': return 'bg-purple-500 text-white border-purple-500 shadow-xs';
-      case 'R': return 'bg-sky-500 text-white border-sky-500 shadow-xs';
-      case 'N': return 'bg-emerald-500 text-white border-emerald-500 shadow-xs';
-      default: return 'bg-stone-800 text-white border-stone-800 shadow-xs';
+      case 'SR': return 'bg-purple-500 text-white shadow-xs';
+      case 'R': return 'bg-sky-500 text-white shadow-xs';
+      case 'N': return 'bg-emerald-500 text-white shadow-xs';
+      default: return 'bg-stone-800 text-white shadow-xs';
     }
   }
   switch (gradeKey) {
     case 'UR+':
-    case 'UR': return 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100';
-    case 'SSR': return 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100';
+    case 'UR': return 'text-pink-600 font-bold hover:bg-pink-50';
+    case 'SSR': return 'text-amber-700 font-bold hover:bg-amber-50';
     case 'SR+':
-    case 'SR': return 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100';
-    case 'R': return 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100';
-    case 'N': return 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
-    default: return 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100';
+    case 'SR': return 'text-purple-600 font-bold hover:bg-purple-50';
+    case 'R': return 'text-sky-600 font-bold hover:bg-sky-50';
+    case 'N': return 'text-emerald-600 font-bold hover:bg-emerald-50';
+    default: return 'text-stone-500 font-bold hover:bg-stone-100';
   }
 };
 
@@ -104,33 +104,57 @@ export default function GuildTasksPage() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   
-  // 로딩 상태
+  // 스크롤 방향 및 앱바 노출 상태 감지용
+  const [isAppbarVisible, setIsAppbarVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+        setIsAppbarVisible(false);
+      } else {
+        setIsAppbarVisible(true);
+      }
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // 로딩 및 모달 상태들
   const [isLoading, setIsLoading] = useState(true);
   const [isModalLoading, setIsModalLoading] = useState(false);
-
-  // 모달 제어 상태
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [nicknameInput, setNicknameInput] = useState('');
   const [roleInput, setRoleInput] = useState('멤버');
   const [missionStatusInput, setMissionStatusInput] = useState('진행');
-
-  // 길드원 삭제 경고 모달 상태
   const [deletingMember, setDeletingMember] = useState<{ id: string; name: string } | null>(null);
-
   const [selectedMemberForFlowers, setSelectedMemberForFlowers] = useState<any | null>(null);
   const [memberFlowers, setMemberFlowers] = useState<any[]>([]);
   const [allFlowers, setAllFlowers] = useState<any[]>([]);
   const [flowerSearchQuery, setFlowerSearchQuery] = useState('');
   const [flowerSuggestions, setFlowerSuggestions] = useState<any[]>([]);
-  
   const [selectedOwnedFlowerGrades, setSelectedOwnedFlowerGrades] = useState<string[]>([]);
-
-  // 일괄 등록 탭 관련 상태
   const [isBatchOpen, setIsBatchOpen] = useState(false);
   const [batchGrades, setBatchGrades] = useState<string[]>([]);
   const [batchPage, setBatchPage] = useState(1);
 
+  // 모달창 활성화 시 뒤쪽 화면 스크롤 방지 처리
+  useEffect(() => {
+    const isAnyModalOpen = isMemberModalOpen || deletingMember !== null || selectedMemberForFlowers !== null;
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMemberModalOpen, deletingMember, selectedMemberForFlowers]);
+  
   useEffect(() => {
     const sGId = localStorage.getItem('guild_id');
     if (!sGId) {
@@ -141,7 +165,6 @@ export default function GuildTasksPage() {
     const gIdNum = Number(sGId);
     setGuildId(gIdNum);
     
-    // 초기 데이터 로딩 수행
     const initData = async () => {
       setIsLoading(true);
       await Promise.all([
@@ -164,15 +187,10 @@ export default function GuildTasksPage() {
       const sortedMembers = data.sort((a, b) => {
         const weightA = ROLE_WEIGHT[a.role] || 1;
         const weightB = ROLE_WEIGHT[b.role] || 1;
-        if (weightA !== weightB) {
-          return weightB - weightA;
-        }
-        // 직급이 같을 경우 닉네임 오름차순(가나다순) 정렬
+        if (weightA !== weightB) return weightB - weightA;
         const nameA = a.nickname || '';
         const nameB = b.nickname || '';
-        if (nameA !== nameB) {
-          return nameA.localeCompare(nameB, 'ko-KR');
-        }
+        if (nameA !== nameB) return nameA.localeCompare(nameB, 'ko-KR');
         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       });
 
@@ -190,11 +208,8 @@ export default function GuildTasksPage() {
         .eq('user_id', m.id)
         .eq('is_owned', 'Y');
       
-      if (!error && count !== null) {
-        counts[m.id] = count;
-      } else {
-        counts[m.id] = 0;
-      }
+      if (!error && count !== null) counts[m.id] = count;
+      else counts[m.id] = 0;
     }
     setMemberFlowerCounts(counts);
   };
@@ -216,9 +231,7 @@ export default function GuildTasksPage() {
       const sorted = data.sort((a, b) => {
         const scoreA = (a.flowers?.score || 0) + (a.extra_score || 0);
         const scoreB = (b.flowers?.score || 0) + (b.extra_score || 0);
-        if (scoreA !== scoreB) {
-          return scoreB - scoreA;
-        }
+        if (scoreA !== scoreB) return scoreB - scoreA;
         const gradeA = GRADE_ORDER[a.flowers?.grade?.toUpperCase()] || 0;
         const gradeB = GRADE_ORDER[b.flowers?.grade?.toUpperCase()] || 0;
         return gradeB - gradeA;
@@ -230,7 +243,7 @@ export default function GuildTasksPage() {
     setIsModalLoading(false);
   };
 
-const handleSaveMember = async (e: React.FormEvent) => {
+  const handleSaveMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guildId || !nicknameInput.trim()) {
       alert('닉네임을 입력해주세요.');
@@ -240,68 +253,48 @@ const handleSaveMember = async (e: React.FormEvent) => {
     const trimmedNickname = nicknameInput.trim();
 
     if (editingMember) {
-      const { data: dupCheck, error: dupError } = await supabase
+      const { data: dupCheck } = await supabase
         .from('profiles')
         .select('id')
         .eq('guild_id', guildId)
         .eq('nickname', trimmedNickname)
         .neq('id', editingMember.id);
 
-      if (dupError) {
-        alert('중복 닉네임 확인 중 오류가 발생했습니다: ' + dupError.message);
-        return;
-      }
-
       if (dupCheck && dupCheck.length > 0) {
         alert(`길드 내에 동일한 닉네임이 존재합니다. [${trimmedNickname}_2] 형식으로 사용을 권장드립니다.`);
         return;
       }
 
-      const { error } = await supabase
+      await supabase
         .from('profiles')
         .update({
           nickname: trimmedNickname,
           role: roleInput,
-          mission_status: missionStatusInput // 수정 시 상태 반영
+          mission_status: missionStatusInput
         })
         .eq('id', editingMember.id);
-
-      if (error) {
-        alert('길드원 정보 수정 실패: ' + error.message);
-        return;
-      }
     } else {
-      const { data: dupCheck, error: dupError } = await supabase
+      const { data: dupCheck } = await supabase
         .from('profiles')
         .select('id')
         .eq('guild_id', guildId)
         .eq('nickname', trimmedNickname);
 
-      if (dupError) {
-        alert('중복 닉네임 확인 중 오류가 발생했습니다: ' + dupError.message);
-        return;
-      }
-
       if (dupCheck && dupCheck.length > 0) {
         alert(`길드 내에 동일한 닉네임이 존재합니다. [${trimmedNickname}_2] 형식으로 사용을 권장드립니다.`);
         return;
       }
 
-      const { error } = await supabase
+      await supabase
         .from('profiles')
         .insert([{
           guild_id: guildId,
           nickname: trimmedNickname,
           role: roleInput,
-          mission_status: missionStatusInput, // 신규 등록 시 선택한 임무 상태 반영
+          mission_status: missionStatusInput,
           is_basic_only: 'N',
           is_vip: 'N'
         }]);
-
-      if (error) {
-        alert('길드원 등록 실패: ' + error.message);
-        return;
-      }
     }
 
     setIsMemberModalOpen(false);
@@ -310,15 +303,10 @@ const handleSaveMember = async (e: React.FormEvent) => {
     fetchMembers(guildId);
   };
 
-  // 길드원 삭제 실행 함수
   const confirmDeleteMember = async () => {
     if (!deletingMember) return;
     const { error } = await supabase.from('profiles').delete().eq('id', deletingMember.id);
-    if (!error && guildId) {
-      fetchMembers(guildId);
-    } else {
-      alert('삭제 중 오류가 발생했습니다.');
-    }
+    if (!error && guildId) fetchMembers(guildId);
     setDeletingMember(null);
   };
 
@@ -334,11 +322,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
   const handleUpdateExtraScore = async (recordId: number, newScore: number) => {
     const validScore = Math.max(0, newScore);
     setMemberFlowers(prev => prev.map(item => item.id === recordId ? { ...item, extra_score: validScore } : item));
-
-    await supabase
-      .from('user_flowers')
-      .update({ extra_score: validScore })
-      .eq('id', recordId);
+    await supabase.from('user_flowers').update({ extra_score: validScore }).eq('id', recordId);
   };
 
   const handleDeleteUserFlower = async (recordId: number) => {
@@ -359,17 +343,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
     } else {
       setFlowerSuggestions([]);
     }
-
-    if (selectedMemberForFlowers || isMemberModalOpen || deletingMember) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-
-  }, [flowerSearchQuery, allFlowers, memberFlowers, selectedMemberForFlowers, isMemberModalOpen, deletingMember]);
+  }, [flowerSearchQuery, allFlowers, memberFlowers]);
 
   const toggleOwnedFlowerGradeFilter = (gradeId: string) => {
     setSelectedOwnedFlowerGrades(prev => 
@@ -407,7 +381,6 @@ const handleSaveMember = async (e: React.FormEvent) => {
 
   const handleToggleAllCurrentPage = async (checked: boolean) => {
     if (!selectedMemberForFlowers) return;
-
     if (checked) {
       for (const flower of paginatedBatchFlowers) {
         await supabase.from('user_flowers').upsert({
@@ -443,21 +416,21 @@ const handleSaveMember = async (e: React.FormEvent) => {
 
   return (
     <NavigationLayout>
-      {/* 전체 레이아웃 고정 및 하단 여백 추가 */}
-      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden overscroll-none px-4 pb-24 space-y-4 animate-in fade-in duration-200">
+      <div className="flex flex-col min-h-screen px-4 pb-28 space-y-4 animate-in fade-in duration-200">
         
-        {/* 상단 고정 영역 */}
-        <div className="shrink-0 bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-stone-200/80 space-y-3.5 mt-4">
+        {/* 상단 고정 영역: 타이틀 제거 및 등록버튼/인원수/필터칩/검색창 통합 배치 */}
+        <div className={`sticky z-20 pt-4 pb-2 space-y-3.5 bg-stone-50/90 backdrop-blur-md transition-all duration-200 ${
+          isAppbarVisible ? 'top-16' : 'top-0'
+        }`}>
+          {/* 첫 번째 줄: 총 길드원 수 & 길드원 등록 버튼 */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="w-8 h-8 rounded-xl bg-pink-100 text-pink-500 flex items-center justify-center shadow-2xs shrink-0">
-                <FaUsers className="text-xs" />
-              </span> 
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xs sm:text-sm font-extrabold text-stone-900 tracking-tight">길드원 보유 꽃 & 임무 관리</h2>
-                <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 text-[11px] font-bold border border-stone-200">
-                  총 {members.length}명
-                </span>
+            <div className="flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-pink-50 text-pink-500 flex items-center justify-center shrink-0">
+                <FaUsers className="text-sm" />
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-stone-500">총 길드원</span>
+                <span className="text-xs sm:text-sm font-extrabold text-stone-900 tracking-tight">{members.length}명</span>
               </div>
             </div>
 
@@ -475,32 +448,8 @@ const handleSaveMember = async (e: React.FormEvent) => {
             </button>
           </div>
 
-          <div className="border-t border-stone-100" />
-
           <div className="space-y-3">
-            {/* 검색창 및 초기화 아이콘 */}
-            <div className="relative flex items-center">
-              <FaSearch className="absolute left-3.5 text-stone-300 text-xs pointer-events-none" />
-              <input
-                type="text"
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                placeholder="길드원 닉네임 검색"
-                className="w-full pl-9 pr-10 py-2.5 bg-stone-50 rounded-xl outline-none text-xs font-medium border border-stone-200 focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all shadow-2xs"
-              />
-              {searchKeyword && (
-                <button
-                  type="button"
-                  onClick={() => setSearchKeyword('')}
-                  className="absolute right-3 w-6 h-6 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-200/65 flex items-center justify-center transition-all cursor-pointer text-[10px]"
-                  title="검색 내용 초기화"
-                >
-                  <FaTimes />
-                </button>
-              )}
-            </div>
-
-            {/* 전체보기 및 상태 필터 칩스 */}
+            {/* 두 번째 줄: 전체 보기, 임무 진행, 임무 중단, 임무 완료 필터 칩들 나란히 배치 */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
               {[
                 { id: 'ALL', label: '전체 보기', icon: <FaListUl className="text-[10px]" /> },
@@ -511,21 +460,21 @@ const handleSaveMember = async (e: React.FormEvent) => {
                 const isSelected = statusFilter === tab.id;
                 let statusChipStyle = '';
                 if (isSelected) {
-                  if (tab.id === 'ALL') statusChipStyle = 'bg-[#C2621C] text-white border-[#C2621C] shadow-xs';
-                  else if (tab.id === '진행') statusChipStyle = 'bg-blue-600 text-white border-blue-600 shadow-xs';
-                  else if (tab.id === '중단') statusChipStyle = 'bg-rose-600 text-white border-rose-600 shadow-xs';
-                  else if (tab.id === '완료') statusChipStyle = 'bg-emerald-600 text-white border-emerald-600 shadow-xs';
+                  if (tab.id === 'ALL') statusChipStyle = 'bg-[#C2621C] text-white shadow-xs';
+                  else if (tab.id === '진행') statusChipStyle = 'bg-blue-600 text-white shadow-xs';
+                  else if (tab.id === '중단') statusChipStyle = 'bg-rose-600 text-white shadow-xs';
+                  else if (tab.id === '완료') statusChipStyle = 'bg-emerald-600 text-white shadow-xs';
                 } else {
-                  if (tab.id === 'ALL') statusChipStyle = 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200';
-                  else if (tab.id === '진행') statusChipStyle = 'bg-blue-50/60 text-blue-700 border-blue-200 hover:bg-blue-100';
-                  else if (tab.id === '중단') statusChipStyle = 'bg-rose-50/60 text-rose-700 border-rose-200 hover:bg-rose-100';
-                  else if (tab.id === '완료') statusChipStyle = 'bg-emerald-50/60 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
+                  if (tab.id === 'ALL') statusChipStyle = 'text-stone-600 hover:bg-stone-100 bg-white border border-stone-200/60';
+                  else if (tab.id === '진행') statusChipStyle = 'text-blue-700 hover:bg-blue-50 bg-white border border-stone-200/60';
+                  else if (tab.id === '중단') statusChipStyle = 'text-rose-700 hover:bg-rose-50 bg-white border border-stone-200/60';
+                  else if (tab.id === '완료') statusChipStyle = 'text-emerald-700 hover:bg-emerald-50 bg-white border border-stone-200/60';
                 }
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setStatusFilter(tab.id)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer border shrink-0 ${statusChipStyle}`}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 ${statusChipStyle}`}
                   >
                     {tab.icon}
                     <span>{tab.label}</span>
@@ -533,18 +482,39 @@ const handleSaveMember = async (e: React.FormEvent) => {
                 );
               })}
             </div>
+
+            {/* 세 번째 줄: 길드원 닉네임 검색 창 */}
+            <div className="relative flex items-center">
+              <FaSearch className="absolute left-3.5 text-stone-400 text-xs pointer-events-none" />
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="길드원 닉네임 검색"
+                className="w-full pl-9 pr-10 py-2.5 bg-stone-100/80 rounded-xl outline-none text-xs font-medium border border-stone-200/60 focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all"
+              />
+              {searchKeyword && (
+                <button
+                  type="button"
+                  onClick={() => setSearchKeyword('')}
+                  className="absolute right-3 w-6 h-6 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-200/65 flex items-center justify-center transition-all cursor-pointer text-[10px]"
+                >
+                  <FaTimes />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* 스크롤 가능한 본문 영역 */}
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1 pb-16 relative" style={{ scrollbarWidth: 'none' }}>
+        {/* 본문 리스트 영역 */}
+        <div className="flex-1 space-y-2 relative">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-24 space-y-3 bg-white rounded-2xl border border-stone-200/80 shadow-xs">
+            <div className="flex flex-col items-center justify-center py-24 space-y-3">
               <div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin"></div>
               <p className="text-xs font-bold text-stone-500">길드원 데이터를 불러오는 중입니다...</p>
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="text-center py-16 text-stone-400 text-xs bg-white rounded-2xl border border-stone-200/80 shadow-xs font-medium">
+            <div className="text-center py-16 text-stone-400 text-xs font-medium">
               등록된 길드원이 없거나 검색 결과가 없습니다.
             </div>
           ) : (
@@ -554,24 +524,23 @@ const handleSaveMember = async (e: React.FormEvent) => {
               const flowerCount = memberFlowerCounts[member.id] || 0;
 
               return (
-                <div key={member.id} className="bg-white p-4 rounded-2xl shadow-xs border border-stone-200/80 flex items-center justify-between gap-3 hover:border-pink-300 transition-all">
-                  <div className="space-y-1.5 min-w-0 flex-1">
+                <div key={member.id} className="py-3 px-2 border-b border-stone-100 flex items-center justify-between gap-3 hover:bg-stone-50/60 transition-all rounded-xl">
+                  <div className="space-y-1 min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-extrabold text-stone-900 tracking-tight">{member.nickname}</span>
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${getRoleStyle(roleName, false)}`}>
+                      <span className="text-xs sm:text-sm font-extrabold text-stone-900 tracking-tight">{member.nickname}</span>
+                      <span className={`text-xs ${getRoleStyle(roleName, false)}`}>
                         {roleName}
                       </span>
                       <button
                         onClick={() => handleUpdateStatus(member.id, currentStatus)}
-                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold border cursor-pointer transition-all hover:scale-105 active:scale-95 ${getStatusBadgeStyle(currentStatus)}`}
-                        title="클릭하여 상태 변경"
+                        className={`text-xs cursor-pointer transition-all hover:scale-105 active:scale-95 ${getStatusBadgeStyle(currentStatus)}`}
                       >
                         {currentStatus} ↻
                       </button>
                     </div>
 
                     <div className="flex items-center gap-2 text-[11px] text-stone-500 font-medium">
-                      <span className="flex items-center gap-1 text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+                      <span className="flex items-center gap-1 text-amber-700 font-bold">
                         <FaSeedling className="text-[10px]" /> 보유 꽃: {flowerCount}개
                       </span>
                     </div>
@@ -589,8 +558,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                         setBatchGrades([]);
                         setBatchPage(1);
                       }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-600 text-[11px] font-bold border border-pink-200 transition-all cursor-pointer shadow-2xs active:scale-95"
-                      title="보유 꽃 관리"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-600 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
                     >
                       <FaSeedling className="text-xs text-pink-500" /> <span>보유 꽃</span>
                     </button>
@@ -604,7 +572,6 @@ const handleSaveMember = async (e: React.FormEvent) => {
                         setIsMemberModalOpen(true);
                       }}
                       className="w-8 h-8 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-500 flex items-center justify-center transition-all cursor-pointer border border-stone-200 active:scale-95"
-                      title="수정"
                     >
                       <FaEdit className="text-xs" />
                     </button>
@@ -612,7 +579,6 @@ const handleSaveMember = async (e: React.FormEvent) => {
                     <button
                       onClick={() => setDeletingMember({ id: member.id, name: member.nickname })}
                       className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 flex items-center justify-center transition-all cursor-pointer border border-rose-200 active:scale-95"
-                      title="삭제"
                     >
                       <FaTrashAlt className="text-xs" />
                     </button>
@@ -679,13 +645,13 @@ const handleSaveMember = async (e: React.FormEvent) => {
                       const isSelected = missionStatusInput === s;
                       let modalChipStyle = '';
                       if (isSelected) {
-                        if (s === '진행') modalChipStyle = 'bg-blue-600 text-white border-blue-600 shadow-xs';
-                        else if (s === '중단') modalChipStyle = 'bg-rose-600 text-white border-rose-600 shadow-xs';
-                        else if (s === '완료') modalChipStyle = 'bg-emerald-600 text-white border-emerald-600 shadow-xs';
+                        if (s === '진행') modalChipStyle = 'bg-blue-600 text-white shadow-xs';
+                        else if (s === '중단') modalChipStyle = 'bg-rose-600 text-white shadow-xs';
+                        else if (s === '완료') modalChipStyle = 'bg-emerald-600 text-white shadow-xs';
                       } else {
-                        if (s === '진행') modalChipStyle = 'bg-blue-50/60 text-blue-700 border-blue-200 hover:bg-blue-100';
-                        else if (s === '중단') modalChipStyle = 'bg-rose-50/60 text-rose-700 border-rose-200 hover:bg-rose-100';
-                        else if (s === '완료') modalChipStyle = 'bg-emerald-50/60 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
+                        if (s === '진행') modalChipStyle = 'text-blue-700 hover:bg-blue-50';
+                        else if (s === '중단') modalChipStyle = 'text-rose-700 hover:bg-rose-50';
+                        else if (s === '완료') modalChipStyle = 'text-emerald-700 hover:bg-emerald-50';
                       }
 
                       const icon = s === '진행' ? <FaCheckCircle className="text-[10px]" /> : s === '중단' ? <FaTimesCircle className="text-[10px]" /> : <FaCheckCircle className="text-[10px]" />;
@@ -695,7 +661,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                           type="button"
                           key={s}
                           onClick={() => setMissionStatusInput(s)}
-                          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${modalChipStyle}`}
+                          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${modalChipStyle}`}
                         >
                           {icon}
                           <span>{s}</span>
@@ -720,9 +686,6 @@ const handleSaveMember = async (e: React.FormEvent) => {
         {deletingMember && (
           <div 
             onClick={() => setDeletingMember(null)}
-            onWheel={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
-            onScroll={(e) => e.stopPropagation()}
             className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
           >
             <div 
@@ -764,9 +727,6 @@ const handleSaveMember = async (e: React.FormEvent) => {
         {selectedMemberForFlowers && (
           <div 
             onClick={() => setSelectedMemberForFlowers(null)}
-            onWheel={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
-            onScroll={(e) => e.stopPropagation()}
             className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-hidden animate-in fade-in duration-200"
           >
             <div 
@@ -783,33 +743,28 @@ const handleSaveMember = async (e: React.FormEvent) => {
                 </button>
               </div>
 
-              {/* 모달 내부 스크롤 영역 */}
               <div className="flex-1 overflow-y-auto space-y-4 pr-1 relative" style={{ scrollbarWidth: 'none' }}>
-                {isModalLoading ? (
+                {isModalLoading && (
                   <div className="absolute inset-0 bg-white/80 backdrop-blur-2xs flex flex-col items-center justify-center z-20 space-y-2.5 rounded-2xl">
                     <div className="w-7 h-7 border-3 border-amber-200 border-t-amber-500 rounded-full animate-spin"></div>
                     <p className="text-[11px] font-bold text-amber-800">꽃 목록을 불러오는 중...</p>
                   </div>
-                ) : null}
+                )}
 
-                {/* 꽃 일괄 등록하기 탭 */}
-                <div className="bg-white rounded-2xl border border-amber-200/80 shadow-xs overflow-hidden">
+                <div>
                   <button
                     onClick={() => setIsBatchOpen(!isBatchOpen)}
-                    className="w-full flex items-center justify-between p-3.5 bg-amber-50/50 hover:bg-amber-50 transition-all text-xs font-bold text-amber-900 cursor-pointer"
+                    className="w-full flex items-center justify-between py-2 text-xs font-bold text-amber-900 cursor-pointer"
                   >
                     <div className="flex items-center gap-1.5">
                       <FaSeedling className="text-amber-500 text-xs" />
                       <span className="text-xs font-bold text-amber-900">꽃 일괄 등록하기</span>
                     </div>
-                    <span className="text-[10px] font-medium text-amber-800/60 bg-amber-100/50 px-2 py-0.5 rounded-md border border-amber-200/50">
-                      체크박스 선택 시 자동 추가/삭제
-                    </span>
                     {isBatchOpen ? <FaChevronUp className="text-xs text-amber-700" /> : <FaChevronDown className="text-xs text-amber-700" />}
                   </button>
 
                   {isBatchOpen && (
-                    <div className="p-3.5 border-t border-amber-100 space-y-3">
+                    <div className="pt-2 space-y-3">
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold text-stone-400">등급 필터:</span>
@@ -830,7 +785,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                                 type="button"
                                 key={fg}
                                 onClick={() => toggleBatchGradeFilter(fg)}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${getFlowerGradeChipStyle(fg, isSelected)}`}
+                                className={`px-2.5 py-1 rounded-lg text-xs transition-all cursor-pointer ${getFlowerGradeChipStyle(fg, isSelected)}`}
                               >
                                 {fg}
                               </button>
@@ -840,7 +795,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                       </div>
 
                       {paginatedBatchFlowers.length > 0 && (
-                        <div className="flex items-center justify-between bg-amber-50/60 px-3 py-2 rounded-xl border border-amber-200/60">
+                        <div className="flex items-center justify-between px-1 py-1">
                           <span className="text-[11px] font-bold text-amber-900">현재 페이지 전체 선택</span>
                           <label className="relative flex items-center cursor-pointer select-none">
                             <input 
@@ -856,9 +811,9 @@ const handleSaveMember = async (e: React.FormEvent) => {
                         </div>
                       )}
 
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {paginatedBatchFlowers.length === 0 ? (
-                          <div className="text-center py-6 text-stone-400 text-xs bg-stone-50 rounded-xl border border-stone-200/60 font-medium">
+                          <div className="text-center py-6 text-stone-400 text-xs font-medium">
                             조건에 해당하는 꽃이 없습니다.
                           </div>
                         ) : (
@@ -866,14 +821,14 @@ const handleSaveMember = async (e: React.FormEvent) => {
                             const isOwned = memberFlowers.some(mf => mf.flower_id === flower.id);
 
                             return (
-                              <div key={flower.id} className="bg-stone-50/70 px-3 py-2 rounded-xl border border-stone-200/70 flex items-center justify-between gap-2.5">
+                              <div key={flower.id} className="py-2 px-1 border-b border-stone-100 flex items-center justify-between gap-2.5">
                                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                  <div className="w-8 h-8 rounded-lg bg-white overflow-hidden flex items-center justify-center border border-stone-200 shrink-0 shadow-2xs">
+                                  <div className="w-7 h-7 rounded-lg bg-stone-100 overflow-hidden flex items-center justify-center shrink-0">
                                     {flower.image_url ? <img src={flower.image_url} alt="" className="w-full h-full object-cover" /> : <FaSeedling className="text-amber-300 text-xs" />}
                                   </div>
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 flex-nowrap overflow-hidden">
-                                      <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${getGradeBadgeColor(flower.grade)}`}>{flower.grade}</span>
+                                      <span className={`text-[10px] shrink-0 ${getGradeBadgeColor(flower.grade)}`}>{flower.grade}</span>
                                       <span className="text-xs font-bold text-stone-900 truncate">{flower.name}</span>
                                     </div>
                                   </div>
@@ -922,7 +877,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                             type="button"
                             disabled={batchPage === 1}
                             onClick={() => setBatchPage(prev => Math.max(prev - 1, 1))}
-                            className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600 font-bold disabled:opacity-40 cursor-pointer border border-stone-200"
+                            className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600 font-bold disabled:opacity-40 cursor-pointer"
                           >
                             이전
                           </button>
@@ -933,7 +888,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                             type="button"
                             disabled={batchPage === totalBatchPages}
                             onClick={() => setBatchPage(prev => Math.min(prev + 1, totalBatchPages))}
-                            className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600 font-bold disabled:opacity-40 cursor-pointer border border-stone-200"
+                            className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600 font-bold disabled:opacity-40 cursor-pointer"
                           >
                             다음
                           </button>
@@ -943,8 +898,8 @@ const handleSaveMember = async (e: React.FormEvent) => {
                   )}
                 </div>
 
-                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/80 shadow-xs space-y-2 relative">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
+                <div className="relative space-y-2 pt-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
                     <FaSearch className="text-amber-500 text-[11px]" />
                     <span>보유 꽃 추가 검색</span>
                   </div>
@@ -954,7 +909,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                     value={flowerSearchQuery}
                     onChange={(e) => setFlowerSearchQuery(e.target.value)}
                     placeholder="추가할 꽃 이름을 입력하세요"
-                    className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl outline-none text-xs border border-stone-200 focus:bg-white focus:ring-2 focus:ring-amber-200 transition-all"
+                    className="w-full px-3.5 py-2.5 bg-stone-100/80 rounded-xl outline-none text-xs border border-stone-200/60 focus:bg-white focus:ring-2 focus:ring-amber-200 transition-all"
                   />
 
                   {flowerSuggestions.length > 0 && (
@@ -978,7 +933,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                           className="px-3.5 py-2.5 hover:bg-amber-50 cursor-pointer flex items-center justify-between text-xs transition-all border-b border-stone-100 last:border-none"
                         >
                           <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${getGradeBadgeColor(f.grade)}`}>{f.grade}</span>
+                            <span className={`text-[10px] ${getGradeBadgeColor(f.grade)}`}>{f.grade}</span>
                             <span className="font-bold text-stone-800">{f.name}</span>
                           </div>
                           <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">+ 추가하기</span>
@@ -995,7 +950,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                     </h4>
                   </div>
 
-                  <div className="flex flex-col gap-1.5 bg-white p-2.5 rounded-2xl border border-amber-200/60 shadow-xs">
+                  <div className="flex flex-col gap-1.5 py-1">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-stone-400">등급 필터:</span>
                       {selectedOwnedFlowerGrades.length > 0 && (
@@ -1015,7 +970,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                             type="button"
                             key={fg}
                             onClick={() => toggleOwnedFlowerGradeFilter(fg)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${getFlowerGradeChipStyle(fg, isSelected)}`}
+                            className={`px-2.5 py-1 rounded-lg text-xs transition-all cursor-pointer ${getFlowerGradeChipStyle(fg, isSelected)}`}
                           >
                             {fg}
                           </button>
@@ -1025,7 +980,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
                   </div>
 
                   {filteredMemberFlowers.length === 0 ? (
-                    <div className="text-center py-10 text-stone-400 text-xs bg-white/50 rounded-2xl border border-amber-200/40 font-medium">
+                    <div className="text-center py-10 text-stone-400 text-xs font-medium">
                       {memberFlowers.length === 0 ? '등록된 보유 꽃이 없습니다.' : '선택한 등급에 해당하는 보유 꽃이 없습니다.'}
                     </div>
                   ) : (
@@ -1036,14 +991,14 @@ const handleSaveMember = async (e: React.FormEvent) => {
                       const totalScore = baseScore + extraScore;
 
                       return (
-                        <div key={item.id} className="bg-white px-3.5 py-2.5 rounded-2xl shadow-xs border border-amber-200/70 flex items-center justify-between gap-2.5">
+                        <div key={item.id} className="py-2 px-1 border-b border-stone-100 flex items-center justify-between gap-2.5">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="w-9 h-9 rounded-xl bg-amber-50 overflow-hidden flex items-center justify-center border border-amber-200 shrink-0 shadow-2xs">
+                            <div className="w-8 h-8 rounded-lg bg-stone-100 overflow-hidden flex items-center justify-center shrink-0">
                               {flower.image_url ? <img src={flower.image_url} alt="" className="w-full h-full object-cover" /> : <FaSeedling className="text-amber-300 text-xs" />}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 flex-nowrap overflow-hidden">
-                                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${getGradeBadgeColor(flower.grade)}`}>{flower.grade}</span>
+                                <span className={`text-[10px] shrink-0 ${getGradeBadgeColor(flower.grade)}`}>{flower.grade}</span>
                                 <span className="text-xs font-bold text-stone-900 truncate">{flower.name}</span>
                               </div>
                               <p className="text-[11px] text-amber-800/80 font-medium mt-0.5">
@@ -1054,32 +1009,30 @@ const handleSaveMember = async (e: React.FormEvent) => {
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-[#C2621C] text-[10px] font-extrabold border border-amber-200/80 shadow-2xs tracking-tight">
+                            <span className="text-[10px] font-extrabold text-[#C2621C] tracking-tight">
                               절품+
                             </span>
                             
-                            <div className="flex items-center bg-white border border-stone-200 rounded-xl overflow-hidden shadow-2xs">
+                            <div className="flex items-center bg-stone-50 border border-stone-200 rounded-lg overflow-hidden">
                               <input
                                 type="number"
                                 min="0"
                                 value={extraScore}
                                 onChange={(e) => handleUpdateExtraScore(item.id, parseInt(e.target.value) || 0)}
-                                className="w-9 py-1.5 text-center text-xs font-bold text-stone-900 bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="w-8 py-1 text-center text-xs font-bold text-stone-900 bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
-                              <div className="flex flex-col border-l border-stone-200 bg-stone-50">
+                              <div className="flex flex-col border-l border-stone-200 bg-stone-100">
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateExtraScore(item.id, extraScore + 1)}
-                                  className="w-5 h-4 flex items-center justify-center text-[9px] text-stone-600 hover:bg-stone-200 transition cursor-pointer border-b border-stone-200"
-                                  title="증가"
+                                  className="w-4 h-3.5 flex items-center justify-center text-[8px] text-stone-600 hover:bg-stone-200 transition cursor-pointer border-b border-stone-200"
                                 >
                                   ▲
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateExtraScore(item.id, extraScore - 1)}
-                                  className="w-5 h-4 flex items-center justify-center text-[9px] text-stone-600 hover:bg-stone-200 transition cursor-pointer"
-                                  title="감소"
+                                  className="w-4 h-3.5 flex items-center justify-center text-[8px] text-stone-600 hover:bg-stone-200 transition cursor-pointer"
                                 >
                                   ▼
                                 </button>
@@ -1088,8 +1041,7 @@ const handleSaveMember = async (e: React.FormEvent) => {
 
                             <button
                               onClick={() => handleDeleteUserFlower(item.id)}
-                              className="w-7 h-7 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-600 flex items-center justify-center transition cursor-pointer border border-pink-200 shadow-xs"
-                              title="삭제"
+                              className="w-7 h-7 rounded-lg bg-pink-50 hover:bg-pink-100 text-pink-600 flex items-center justify-center transition cursor-pointer"
                             >
                               <FaTrashAlt className="text-[10px]" />
                             </button>

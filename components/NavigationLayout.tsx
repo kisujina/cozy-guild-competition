@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
   FaSeedling, FaTasks, FaBullhorn, 
-  FaShareAlt, FaRegQuestionCircle, FaSignOutAlt , FaBell
+  FaShareAlt, FaRegQuestionCircle, FaSignOutAlt, FaBell
 } from 'react-icons/fa';
 
 export default function NavigationLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +17,37 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
   const [dayOfWeek, setDayOfWeek] = useState('');
   const [isNoticeOpen, setIsNoticeOpen] = useState(false);
   const [hasUnreadNotice, setHasUnreadNotice] = useState(true);
+
+  // 상/하단바 표시 여부 상태 (true: 보임, false: 숨김)
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  // 스크롤 방향 감지 로직
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // 최상단 근처에서는 무조건 보이게 처리
+      if (currentScrollY < 10) {
+        setIsVisible(true);
+        lastScrollY.current = currentScrollY;
+        return;
+      }
+
+      if (currentScrollY > lastScrollY.current) {
+        // 아래로 스크롤할 때 -> 숨김
+        setIsVisible(false);
+      } else {
+        // 위로 스크롤할 때 -> 나타남
+        setIsVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // 모달이 열려있을 때 배경 페이지 전체 스크롤 방지
   useEffect(() => {
@@ -63,8 +94,8 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
     <div className="min-h-screen bg-[#FAF8F5] text-stone-700 selection:bg-pink-100 selection:text-pink-700 font-sans flex flex-col items-center">
       <div className="w-full max-w-md relative flex flex-col min-h-screen bg-[#FAF8F5] shadow-sm">
         
-        {/* 1. 상단 앱 바 */}
-        <header className="fixed top-0 left-0 right-0 max-w-md mx-auto z-30 bg-white/85 backdrop-blur-md border-b border-stone-200/60 px-4 py-3 flex items-center justify-between shadow-xs">
+        {/* 1. 상단 앱 바 (스크롤 내리면 위로 숨겨지고, 올리면 스르륵 나타남) */}
+        <header className={`w-full fixed top-0 left-1/2 -translate-x-1/2 max-w-md bg-white/85 backdrop-blur-md border-b border-stone-200/60 px-4 py-3 flex items-center justify-between shadow-xs z-30 transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-pink-50 text-pink-400 flex items-center justify-center shadow-inner">
               <FaSeedling className="text-lg" />
@@ -97,13 +128,13 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
           </div>
         </header>
 
-        {/* 2. 메인 콘텐츠 */}
-        <main className="flex-1 w-full pt-[76px] pb-[80px]">
+        {/* 2. 메인 콘텐츠 (상단바가 fixed 되었으므로 밀리지 않도록 상단 패딩 pt-16 추가) */}
+        <main className="flex-1 w-full pt-16 pb-20">
           {children}
         </main>
 
-        {/* 3. 하단 네비게이션 (z-index를 30으로 낮추고, 공지 모달이 열릴 때는 클릭 방지) */}
-        <nav className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-stone-200/60 px-6 py-2.5 flex items-center justify-around z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] transition-opacity ${isNoticeOpen ? 'pointer-events-none opacity-40' : ''}`}>
+        {/* 3. 하단 네비게이션 (스크롤 내리면 아래로 숨겨지고, 올리면 스르륵 나타남) */}
+        <nav className={`w-full fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md bg-white/90 backdrop-blur-md border-t border-stone-200/60 px-6 py-2.5 flex items-center justify-around z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] transition-transform duration-300 ${isVisible && !isNoticeOpen ? 'translate-y-0' : 'translate-y-full'}`}>
           <Link 
             href="/flowers/select" 
             className={`flex flex-col items-center gap-1 transition cursor-pointer ${pathname.includes('/flowers') ? 'text-pink-500 font-bold' : 'text-stone-400 hover:text-stone-600'}`}
@@ -127,7 +158,7 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
           </Link>
         </nav>
 
-        {/* 4. 공지사항 모달 (z-index를 50으로 확실히 부여하여 최상단 위치) */}
+        {/* 4. 공지사항 모달 */}
         {isNoticeOpen && (
           <div 
             className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
@@ -140,11 +171,10 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
               className="bg-[#FFFDF9] rounded-[28px] p-5 max-w-md w-full max-h-[88vh] overflow-y-auto shadow-2xl border border-purple-100 space-y-4 relative"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* 모달 헤더 */}
               <div className="flex items-center justify-between border-b border-stone-200/60 pb-3.5">
                 <h2 className="text-lg font-bold text-stone-800 flex items-center gap-2">
                   <FaBell className="w-5 h-5 text-[#9b87f5]" />
-                  길드 공지사항
+                  길드해 공지사항
                 </h2>
                 <button 
                   onClick={() => setIsNoticeOpen(false)}
@@ -154,7 +184,6 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                 </button>
               </div>
 
-              {/* 공지 내용 본문 */}
               <div className="space-y-4 text-stone-700 text-sm leading-relaxed">
                 <div className="bg-[#f3f0ff]/60 p-3.5 rounded-xl border border-[#e8deff]">
                   <span className="inline-block px-2 py-0.5 bg-[#e8deff] text-[#6e56cf] text-xs font-semibold rounded-md mb-1">
@@ -181,7 +210,7 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span><strong>[임무 꽃 조회]</strong> 배너 필터 검색 옵션 추가</span>
+                      <span><strong>[임무 꽃 조회]</strong> 필터 검색 옵션, 즐겨찾기 꽃 리스트 추가</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>

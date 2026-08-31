@@ -53,7 +53,7 @@ export default function FlowerSelectPage() {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
   
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [selectedFlower, setSelectedFlower] = useState<any | null>(null);
   const [flowerMembers, setFlowerMembers] = useState<any[]>([]);
@@ -63,14 +63,11 @@ export default function FlowerSelectPage() {
 
   const [guildMembers, setGuildMembers] = useState<any[]>([]);
 
-  // 페이지 및 모달 전용 로딩 상태 선언
   const [isLoading, setIsLoading] = useState(true);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  // 커스텀 삭제 확인 모달 상태 (대상 ID와 함께 닉네임 정보 저장)
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; nickname: string } | null>(null);
 
-  // 모달이 열려있을 때 배경 페이지 전체 스크롤 방지
   useEffect(() => {
     if (selectedFlower || deleteTarget !== null) {
       document.body.style.overflow = 'hidden';
@@ -122,7 +119,7 @@ export default function FlowerSelectPage() {
     if (!guildId) return;
 
     try {
-      setIsModalLoading(true); // 모달 데이터 로딩 시작
+      setIsModalLoading(true);
       const { data, error } = await supabase
         .from('user_flowers')
         .select('*, flowers (*), profiles!inner (*)')
@@ -144,7 +141,7 @@ export default function FlowerSelectPage() {
       console.error('모달 길드원 조회 실패:', err);
       setFlowerMembers([]);
     } finally {
-      setIsModalLoading(false); // 모달 데이터 로딩 종료
+      setIsModalLoading(false);
     }
   };
 
@@ -198,7 +195,6 @@ export default function FlowerSelectPage() {
     if (error && selectedFlower) fetchFlowerMembers(selectedFlower.id); 
   };
 
-  // 커스텀 모달을 통한 삭제 실행 핸들러
   const executeDeleteUserFlower = async () => {
     if (deleteTarget === null) return;
     const { error } = await supabase.from('user_flowers').delete().eq('id', deleteTarget.id);
@@ -275,203 +271,205 @@ export default function FlowerSelectPage() {
 
   return (
     <NavigationLayout>
-      <div className="max-w-md mx-auto h-[calc(100vh-3.5rem)] flex flex-col bg-[#FAF9F6] overflow-hidden overscroll-none">
+      <div className="max-w-md mx-auto flex flex-col bg-[#FAF9F6]">
         
-        {/* 상단 고정 영역 */}
-        <div className="shrink-0 bg-[#FAF9F6] px-4 pt-3 pb-2 space-y-3 z-10 border-b border-stone-200/40">
-          
-          <div className="space-y-2">
-            {showNoResultNotice && flowerSearch.trim() !== '' && (
-              <div className="flex items-start gap-1.5 text-rose-500 text-xs bg-rose-50/90 backdrop-blur-xs p-3.5 rounded-2xl border border-rose-100 shadow-2xs">
-                <FaExclamationCircle className="mt-0.5 shrink-0 text-sm" />
-                <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                  신규 꽃 추가의 경우 상단의 <FaRegQuestionCircle className="text-sm" />를 눌러 추가 요청 해주시길 바랍니다.
-                </span>
-              </div>
-            )}
+        {/* 1. 상단 필터 및 배너 영역 */}
+        <div className="px-3 pt-1.5 space-y-2">
+          <div className="flex justify-between items-center px-1">
+            <button 
+              onClick={() => setIsFilterOpen(!isFilterOpen)} 
+              className="flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-pink-500 transition cursor-pointer select-none"
+            >
+              <span className="w-5 h-5 rounded-lg bg-pink-100/80 text-pink-500 flex items-center justify-center text-[10px]">
+                <FaSlidersH />
+              </span>
+              <span>{isFilterOpen ? '숨기기' : '검색 옵션 추가'}</span>
+              <span className={`text-stone-400 text-[10px] transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`}>
+                <FaChevronDown />
+              </span>
+            </button>
 
-            <div className="relative flex items-center">
-              <FaSearch className="absolute left-4 text-stone-300 text-sm" />
-              <input
-                type="text"
-                value={flowerSearch}
-                onChange={(e) => setFlowerSearch(e.target.value)}
-                placeholder="꽃 이름으로 찾아보세요."
-                className="w-full pl-11 pr-10 py-3 bg-white rounded-2xl shadow-2xs border border-stone-200/70 focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none text-sm transition"
-              />
-              {flowerSearch && (
-                <button
-                  type="button"
-                  onClick={() => { setFlowerSearch(''); setShowNoResultNotice(false); }}
-                  className="absolute right-3.5 w-6 h-6 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-400 hover:text-stone-600 flex items-center justify-center transition cursor-pointer"
-                  title="검색어 초기화"
-                >
-                  <FaTimes className="text-xs" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* 필터 옵션 바 및 내부 서브 필터 칩스 영역 */}
-          <div className="bg-white px-3.5 py-3 rounded-2xl border border-stone-200/70 shadow-xs space-y-3">
-            
-            <div className="flex justify-between items-center">
-              <button 
-                onClick={() => setIsFilterOpen(!isFilterOpen)} 
-                className="flex items-center gap-2 text-xs font-bold text-stone-700 hover:text-pink-500 transition cursor-pointer select-none"
-              >
-                <span className="w-6 h-6 rounded-xl bg-pink-100 text-pink-500 flex items-center justify-center text-[11px]">
-                  <FaSlidersH />
-                </span>
-                <span className="flex items-center gap-1.5">
-                  {isFilterOpen ? '필터 및 정렬 옵션 숨기기' : '필터 및 정렬 옵션 펼치기'}
-                  <span className={`text-stone-400 text-xs transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`}>
-                    <FaChevronDown />
-                  </span>
-                </span>
-              </button>
-
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-pink-600 bg-pink-50/80 px-2 py-0.5 rounded-md border border-pink-100">
+                {displayedFlowersList.length}개
+              </span>
               <button
                 onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-stone-50 border border-stone-200/80 text-stone-600 hover:bg-stone-100 transition text-[11px] font-semibold cursor-pointer shadow-2xs"
-                title="정렬 기준 전환"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/80 border border-stone-200/80 text-stone-600 hover:bg-stone-100 transition text-[11px] font-semibold cursor-pointer shadow-2xs"
               >
-                {sortOrder === 'desc' ? (
-                  <>
-                    <FaSortAmountDown className="text-amber-500 text-[10px]" />
-                    <span>점수 내림차순</span>
-                  </>
-                ) : (
-                  <>
-                    <FaSortAmountUp className="text-amber-500 text-[10px]" />
-                    <span>점수 오름차순</span>
-                  </>
-                )}
+                {sortOrder === 'desc' ? <FaSortAmountDown className="text-amber-500 text-[10px]" /> : <FaSortAmountUp className="text-amber-500 text-[10px]" />}
+                <span>{sortOrder === 'desc' ? '내림차순' : '오름차순'}</span>
               </button>
             </div>
-            
-            {/* 필터 칩스 및 서브 탭 영역 */}
-            {isFilterOpen && (
-              <div className="space-y-3 pt-2 border-t border-stone-100">
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-[11px]" style={{ scrollbarWidth: 'none' }}>
-                  <button onClick={() => handleMainFilterClick('all')} className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer shrink-0 ${mainFilter === 'all' ? 'bg-stone-800 text-white shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>all</button>
-                  <span className="text-stone-300 mx-0.5 font-light">|</span>
-                  <button onClick={() => handleMainFilterClick('mine')} className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer shrink-0 ${mainFilter === 'mine' ? 'bg-pink-500 text-white shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>나의 보유</button>
-                  <button onClick={() => handleMainFilterClick('not_mine')} className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer shrink-0 ${mainFilter === 'not_mine' ? 'bg-pink-500 text-white shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>나의 미보유</button>
-                  <span className="text-stone-300 mx-0.5 font-light">|</span>
-                  <button onClick={() => handleSubFilterClick('guild_mine')} className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer shrink-0 ${subFilter === 'guild_mine' ? 'bg-purple-500 text-white shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>길드원 보유</button>
-                  <button onClick={() => handleSubFilterClick('guild_not_mine')} className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer shrink-0 ${subFilter === 'guild_not_mine' ? 'bg-purple-500 text-white shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>길드원 미보유</button>
-                </div>
-
-                <div className="flex items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                  {['UR+', 'UR', 'SSR', 'SR+', 'SR', 'R', 'N'].map((grade) => {
-                    const isSelected = selectedGrades.includes(grade);
-                    let chipColorStyle = 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100';
-                    
-                    if (isSelected) {
-                      if (grade === 'UR+' || grade === 'UR') chipColorStyle = 'bg-pink-500 text-white border-pink-500 shadow-xs';
-                      else if (grade === 'SSR') chipColorStyle = 'bg-amber-400 text-white border-amber-400 shadow-xs';
-                      else if (grade === 'SR+' || grade === 'SR') chipColorStyle = 'bg-purple-500 text-white border-purple-500 shadow-xs';
-                      else if (grade === 'R') chipColorStyle = 'bg-sky-500 text-white border-sky-500 shadow-xs';
-                      else if (grade === 'N') chipColorStyle = 'bg-emerald-500 text-white border-emerald-500 shadow-xs';
-                    } else {
-                      if (grade === 'UR+' || grade === 'UR') chipColorStyle = 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100';
-                      else if (grade === 'SSR') chipColorStyle = 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100';
-                      else if (grade === 'SR+' || grade === 'SR') chipColorStyle = 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100';
-                      else if (grade === 'R') chipColorStyle = 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100';
-                      else if (grade === 'N') chipColorStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
-                    }
-
-                    return (
-                      <button key={grade} onClick={() => toggleGradeSelection(grade)} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer border ${chipColorStyle}`}>
-                        {grade} {isSelected && '✓'}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
           </div>
+          
+          {isFilterOpen && (
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-[11px]" style={{ scrollbarWidth: 'none' }}>
+                <button onClick={() => handleMainFilterClick('all')} className={`px-2.5 py-1 rounded-lg font-medium shrink-0 cursor-pointer ${mainFilter === 'all' ? 'bg-stone-800 text-white shadow-xs' : 'bg-white/80 text-stone-600 border border-stone-200/70 hover:bg-stone-100'}`}>all</button>
+                <button onClick={() => handleMainFilterClick('mine')} className={`px-2.5 py-1 rounded-lg font-medium shrink-0 cursor-pointer ${mainFilter === 'mine' ? 'bg-pink-500 text-white shadow-xs' : 'bg-white/80 text-stone-600 border border-stone-200/70 hover:bg-stone-100'}`}>나의 보유</button>
+                <button onClick={() => handleMainFilterClick('not_mine')} className={`px-2.5 py-1 rounded-lg font-medium shrink-0 cursor-pointer ${mainFilter === 'not_mine' ? 'bg-pink-500 text-white shadow-xs' : 'bg-white/80 text-stone-600 border border-stone-200/70 hover:bg-stone-100'}`}>나의 미보유</button>
+                <button onClick={() => handleSubFilterClick('guild_mine')} className={`px-2.5 py-1 rounded-lg font-medium shrink-0 cursor-pointer ${subFilter === 'guild_mine' ? 'bg-purple-500 text-white shadow-xs' : 'bg-white/80 text-stone-600 border border-stone-200/70 hover:bg-stone-100'}`}>길드원 보유</button>
+                <button onClick={() => handleSubFilterClick('guild_not_mine')} className={`px-2.5 py-1 rounded-lg font-medium shrink-0 cursor-pointer ${subFilter === 'guild_not_mine' ? 'bg-purple-500 text-white shadow-xs' : 'bg-white/80 text-stone-600 border border-stone-200/70 hover:bg-stone-100'}`}>길드원 미보유</button>
+              </div>
 
-          {/* 즐겨찾는 꽃 및 검색 결과 카운트 영역 */}
-          <div className="flex flex-col gap-1.5 pt-0.5">
-            {favoriteFlowersList.length > 0 && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-1 text-[11px] font-bold text-pink-500 px-1">
-                  <FaHeart className="text-[10px]" />
-                  <span>즐겨찾는 꽃</span>
-                </div>
-                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                  {favoriteFlowersList.map(fav => (
-                    <div
-                      key={fav.id}
-                      onClick={() => { setSelectedFlower(fav); fetchFlowerMembers(fav.id); }}
-                      className="shrink-0 flex items-center gap-2 bg-white pl-2.5 pr-3 py-1.5 rounded-2xl border border-pink-100 shadow-2xs cursor-pointer hover:border-pink-300 transition"
+              <div className="flex items-center gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                {['UR+', 'UR', 'SSR', 'SR+', 'SR', 'R', 'N'].map((grade) => {
+                  const isSelected = selectedGrades.includes(grade);
+                  let chipColorStyle = 'bg-white/80 text-stone-600 border-stone-200/70 hover:bg-stone-100';
+                  
+                  if (isSelected) {
+                    if (grade === 'UR+' || grade === 'UR') chipColorStyle = 'bg-pink-500 text-white border-pink-500 shadow-xs';
+                    else if (grade === 'SSR') chipColorStyle = 'bg-amber-400 text-white border-amber-400 shadow-xs';
+                    else if (grade === 'SR+' || grade === 'SR') chipColorStyle = 'bg-purple-500 text-white border-purple-500 shadow-xs';
+                    else if (grade === 'R') chipColorStyle = 'bg-sky-500 text-white border-sky-500 shadow-xs';
+                    else if (grade === 'N') chipColorStyle = 'bg-emerald-500 text-white border-emerald-500 shadow-xs';
+                  } else {
+                    if (grade === 'UR+' || grade === 'UR') chipColorStyle = 'bg-pink-50/60 text-pink-700 border-pink-200/80 hover:bg-pink-100';
+                    else if (grade === 'SSR') chipColorStyle = 'bg-amber-50/60 text-amber-800 border-amber-200/80 hover:bg-amber-100';
+                    else if (grade === 'SR+' || grade === 'SR') chipColorStyle = 'bg-purple-50/60 text-purple-700 border-purple-200/80 hover:bg-purple-100';
+                    else if (grade === 'R') chipColorStyle = 'bg-sky-50/60 text-sky-700 border-sky-200/80 hover:bg-sky-100';
+                    else if (grade === 'N') chipColorStyle = 'bg-emerald-50/60 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100';
+                  }
+
+                  return (
+                    <button 
+                      key={grade} 
+                      onClick={() => toggleGradeSelection(grade)} 
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer border ${chipColorStyle}`}
                     >
-                      <div className="w-6 h-6 rounded-xl overflow-hidden bg-stone-100 flex items-center justify-center border border-stone-200/60 shrink-0">
-                        {fav.image_url ? <img src={fav.image_url} alt="" className="w-full h-full object-cover" /> : <FaSeedling className="text-[9px] text-stone-300" />}
-                      </div>
-                      <div className="text-[11px] font-bold text-stone-800">{fav.name}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between px-1 pt-1">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600">
-                <FaListAlt className="text-pink-500 text-[11px]" />
-                <span>검색 결과</span>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-100 text-xs font-bold text-pink-600 shadow-2xs">
-                <span>꽃 수량:</span>
-                <span className="text-pink-900">{displayedFlowersList.length}개</span>
+                      {grade} {isSelected && '✓'}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          )}
 
-        </div>
-
-        {/* 꽃 검색 결과 리스트 영역 */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 pb-24 overscroll-none [&::-webkit-scrollbar]:hidden"
-             style={{ scrollbarWidth: 'none' }}>
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
-              <FaSpinner className="animate-spin text-3xl text-pink-500" />
-              <span className="text-xs font-bold text-stone-500">꽃 데이터를 불러오는 중입니다...</span>
-            </div>
-          ) : displayedFlowersList.length === 0 ? (
-            <div className="text-center py-12 text-stone-400 text-xs bg-white rounded-3xl border border-stone-200/50 shadow-2xs">
-              조건에 일치하는 꽃이 없습니다.
-            </div>
-          ) : (
-            displayedFlowersList.map((flower) => (
-              <div key={flower.id} onClick={() => { setSelectedFlower(flower); fetchFlowerMembers(flower.id); setModalMemberSearch(''); setModalStatusFilter('ALL'); }} className="bg-white p-3.5 rounded-3xl shadow-2xs border border-stone-200/60 hover:border-pink-300 transition flex items-center justify-between cursor-pointer group">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-stone-50 overflow-hidden flex items-center justify-center border border-stone-100 shrink-0">
-                    {flower.image_url ? <img src={flower.image_url} alt={flower.name} className="w-full h-full object-cover" /> : <FaSeedling className="text-stone-300 text-lg" />}
+          {/* 즐겨찾는 꽃 바 */}
+          {favoriteFlowersList.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto py-0.5" style={{ scrollbarWidth: 'none' }}>
+              <span className="text-[10px] font-bold text-pink-500 shrink-0 flex items-center gap-0.5">
+                <FaHeart className="text-[9px]" /> 즐겨찾기:
+              </span>
+              {favoriteFlowersList.map(fav => (
+                <div
+                  key={fav.id}
+                  onClick={() => { setSelectedFlower(fav); fetchFlowerMembers(fav.id); }}
+                  className="shrink-0 flex items-center gap-1.5 bg-[#FAF9F6] px-2.5 py-1 rounded-xl border border-pink-200/60 shadow-2xs cursor-pointer hover:border-pink-300 transition"
+                >
+                  <div className="w-4 h-4 rounded-full overflow-hidden bg-stone-100 flex items-center justify-center shrink-0">
+                    {fav.image_url ? <img src={fav.image_url} alt="" className="w-full h-full object-cover" /> : <FaSeedling className="text-[8px] text-stone-300" />}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-stone-800 group-hover:text-pink-500 transition">{flower.name}</h3>
-                      <span className={`px-2 py-0.5 rounded-md border text-[10px] font-bold ${getGradeBadgeColor(flower.grade)}`}>{flower.grade}</span>
-                    </div>
-                    <p className="text-xs text-stone-400 mt-0.5">기본 임무점수: <span className="font-semibold text-stone-600">{flower.score || 0}점</span></p>
-                  </div>
+                  <span className="text-[10px] font-bold text-stone-800">{fav.name}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); toggleFavorite(flower.id); }} className="p-2 text-pink-400 hover:bg-pink-50 rounded-2xl transition cursor-pointer">
-                    {favoriteFlowerIds.includes(flower.id) ? <FaHeart className="text-sm" /> : <FaRegHeart className="text-stone-300 text-sm" />}
-                  </button>
-                  <FaChevronRight className="text-stone-300 text-xs mr-1 group-hover:translate-x-0.5 transition" />
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
 
-      </div>
+        {showNoResultNotice && flowerSearch.trim() !== '' && (
+          <div className="mx-3 mt-1.5 flex items-start gap-1.5 text-rose-500 text-xs bg-rose-50/90 backdrop-blur-xs p-2.5 rounded-xl border border-rose-100 shadow-2xs">
+            <FaExclamationCircle className="mt-0.5 shrink-0 text-sm" />
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              신규 꽃 추가 요청은 상단의 <FaRegQuestionCircle className="text-sm" />를 눌러주세요.
+            </span>
+          </div>
+        )}
+
+        {/* 2. 꽃 이름 검색창 (스크롤 시 맨 위 top-0에 밀착되도록 수정) */}
+        <div className="sticky top-0 bg-[#FAF9F6] px-3 py-2 z-30 border-b border-stone-200/40 mt-1.5 shadow-[0_4px_6px_-2px_rgba(0,0,0,0.02)]">
+          <div className="relative flex items-center">
+            <FaSearch className="absolute left-3.5 text-stone-300 text-sm" />
+            <input
+              type="text"
+              value={flowerSearch}
+              onChange={(e) => setFlowerSearch(e.target.value)}
+              placeholder="꽃 이름으로 찾아보세요."
+              className="w-full pl-10 pr-9 py-2 bg-white rounded-xl shadow-2xs border border-stone-200/70 focus:ring-2 focus:ring-pink-200 focus:border-pink-300 outline-none text-sm transition"
+            />
+            {flowerSearch && (
+              <button
+                type="button"
+                onClick={() => { setFlowerSearch(''); setShowNoResultNotice(false); }}
+                className="absolute right-3 w-5 h-5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-400 hover:text-stone-600 flex items-center justify-center transition cursor-pointer"
+                title="검색어 초기화"
+              >
+                <FaTimes className="text-[10px]" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 3. 2열 컴팩트 한 줄 카드 리스트 영역 */}
+        <div className="flex-1 p-3 pb-24 min-h-[300px] flex flex-col relative z-10">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-3 my-auto">
+              <FaSpinner className="animate-spin text-3xl text-pink-500" />
+              <span className="text-xs font-bold text-stone-500">꽃 리스트를 불러오는 중입니다...</span>
+            </div>
+          ) : displayedFlowersList.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-stone-400 text-xs gap-2 my-auto">
+              <FaSeedling className="text-2xl text-stone-300" />
+              <span>검색 결과가 없습니다.</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {displayedFlowersList.map((flower) => {
+                const isFavorite = favoriteFlowersList.some(fav => fav.id === flower.id);
+
+                return (
+                  <div
+                    key={flower.id}
+                    onClick={() => { setSelectedFlower(flower); fetchFlowerMembers(flower.id); }}
+                    className="bg-white p-2.5 rounded-2xl border border-stone-200/80 shadow-[0_2px_6px_rgba(0,0,0,0.02)] flex items-center justify-between cursor-pointer hover:border-pink-300 hover:shadow-md transition group relative"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-stone-100 overflow-hidden flex items-center justify-center border border-stone-200/60 shrink-0 shadow-2xs">
+                        {flower.image_url ? (
+                          <img src={flower.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                        ) : (
+                          <FaSeedling className="text-stone-400 text-sm" />
+                        )}
+                      </div>
+                      
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold border leading-none ${getGradeBadgeColor(flower.grade)}`}>
+                            {flower.grade}
+                          </span>
+                          <span className="text-[10px] text-amber-900 font-bold bg-amber-50/80 px-1.5 py-0.2 rounded border border-amber-100/60">
+                            {flower.score || 0}점
+                          </span>
+                        </div>
+                        <h3 className="text-xs font-bold text-stone-900 truncate tracking-tight" title={flower.name}>
+                          {flower.name}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(flower.id);
+                      }}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center transition shrink-0 ml-1.5 cursor-pointer ${
+                        isFavorite 
+                          ? 'text-pink-500 bg-pink-50 hover:bg-pink-100' 
+                          : 'text-stone-300 bg-stone-50 hover:bg-stone-100 hover:text-stone-400'
+                      }`}
+                      title={isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                    >
+                      {isFavorite ? <FaHeart className="text-[10px]" /> : <FaRegHeart className="text-[10px]" />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>    
 
       {/* 꽃 상세정보 모달 */}
       {selectedFlower && (
@@ -506,7 +504,6 @@ export default function FlowerSelectPage() {
               </button>
             </div>
 
-            {/* 길드원 추가 실시간 검색 영역 */}
             <div className="bg-white p-2.5 rounded-2xl border border-amber-200/60 shadow-2xs space-y-1.5 relative">
               <div className="flex items-center gap-1.5 px-1 text-[11px] font-bold text-amber-700">
                 <FaSearch className="text-amber-500 text-[10px]" />
@@ -540,7 +537,6 @@ export default function FlowerSelectPage() {
               </div>
             </div>
 
-            {/* 필터 칩스 크기 및 패딩 축소 적용 */}
             <div className="flex items-center gap-1 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
               {[
                 { id: 'ALL', label: '전체 보기', icon: <FaListAlt /> },
@@ -575,7 +571,6 @@ export default function FlowerSelectPage() {
                 <span>👑 이 꽃을 보유한 길드원 ({filteredFlowerMembers.length}명)</span>
               </h3>
 
-              {/* 모달 데이터 로딩 중일 때 스피너 표시 */}
               {isModalLoading ? (
                 <div className="flex flex-col items-center justify-center py-10 gap-2">
                   <FaSpinner className="animate-spin text-2xl text-amber-600" />
@@ -617,22 +612,22 @@ export default function FlowerSelectPage() {
                                 const val = e.target.value === '' ? 0 : Number(e.target.value); 
                                 updateExtraScore(item.id, isNaN(val) ? 0 : val); 
                               }} 
-                              className="w-9 py-1 text-center text-xs font-bold text-stone-900 bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                              className="w-8 py-1 text-center text-xs font-bold text-stone-900 bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                             <div className="flex flex-col border-l border-stone-200 bg-stone-50">
-                              <button 
+                              <button
                                 type="button"
                                 onClick={() => updateExtraScore(item.id, extraScore + 1)}
-                                className="w-5 h-4 flex items-center justify-center text-[9px] text-stone-600 hover:bg-stone-200 transition cursor-pointer border-b border-stone-200"
-                                title="증가"
+                                className="px-1.5 h-[14px] flex items-center justify-center text-stone-500 hover:bg-pink-100 hover:text-pink-600 transition text-[8px] cursor-pointer"
+                                title="1 증가"
                               >
                                 ▲
                               </button>
-                              <button 
+                              <button
                                 type="button"
-                                onClick={() => updateExtraScore(item.id, extraScore - 1)}
-                                className="w-5 h-4 flex items-center justify-center text-[9px] text-stone-600 hover:bg-stone-200 transition cursor-pointer"
-                                title="소"
+                                onClick={() => updateExtraScore(item.id, Math.max(0, extraScore - 1))}
+                                className="px-1.5 h-[14px] flex items-center justify-center text-stone-500 hover:bg-pink-100 hover:text-pink-600 transition text-[8px] border-t border-stone-200 cursor-pointer"
+                                title="1 감소"
                               >
                                 ▼
                               </button>
@@ -641,10 +636,11 @@ export default function FlowerSelectPage() {
                         </div>
 
                         <button 
-                          onClick={() => setDeleteTarget({ id: item.id, nickname: memberNickname })} 
-                          className="w-7 h-7 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 flex items-center justify-center transition cursor-pointer border border-rose-200/60 shadow-2xs"
+                          onClick={() => setDeleteTarget({ id: item.id, nickname: memberNickname })}
+                          className="w-7 h-7 rounded-xl bg-stone-50 hover:bg-rose-50/80 text-stone-400 hover:text-rose-500 flex items-center justify-center transition border border-stone-200/80 cursor-pointer"
+                          title="보유 기록 삭제"
                         >
-                          <FaTrashAlt className="text-[10px]" />
+                          <FaTrashAlt className="text-xs" />
                         </button>
                       </div>
                     </div>
@@ -652,44 +648,42 @@ export default function FlowerSelectPage() {
                 })
               )}
             </div>
-
           </div>
         </div>
       )}
 
-      {/* [커스텀 삭제 확인 모달] 요청하신 타이틀과 내용 반영 */}
+      {/* 커스텀 삭제 확인 모달 */}
       {deleteTarget !== null && (
         <div 
           className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
           onClick={() => setDeleteTarget(null)}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onScroll={(e) => e.stopPropagation()}
         >
           <div 
-            className="bg-white rounded-[28px] p-6 max-w-xs w-full shadow-2xl border border-stone-100 space-y-4 text-center"
+            className="bg-white rounded-3xl p-5 max-w-xs w-full shadow-2xl border border-stone-200 text-center space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto text-base shadow-2xs border border-rose-200/60">
-              <FaExclamationCircle />
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto text-xl">
+              <FaTrashAlt />
             </div>
-            
             <div className="space-y-1">
-              <h3 className="text-sm font-extrabold text-stone-900">꽃 보유 길드원 삭제</h3>
-              <p className="text-xs text-stone-500 font-medium leading-relaxed">
-                정말 <span className="font-extrabold text-stone-800">'{selectedFlower?.name || '해당'}'</span> 보유 길드원 목록에서
-                <br />
-                <span className="font-extrabold text-stone-800">'{deleteTarget.nickname}'</span>님을 삭제하시겠습니까?
+              <h3 className="text-sm font-extrabold text-stone-900">'{selectedFlower.name}' 보유 현황 삭제</h3>
+              <p className="text-xs text-stone-500 leading-relaxed">
+                <span className="font-bold text-stone-800">{deleteTarget.nickname}</span>님의 보유 꽃 현황에서<br></ br>'<span className="font-bold text-stone-800">{selectedFlower.name}</span>'을 삭제하시겠습니까?
               </p>
             </div>
-
-            <div className="flex gap-2 pt-1">
-              <button
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button 
                 onClick={() => setDeleteTarget(null)}
-                className="flex-1 bg-stone-100 text-stone-600 py-3 rounded-2xl text-xs font-bold hover:bg-stone-200 transition-all cursor-pointer active:scale-95"
+                className="py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 text-xs font-bold transition cursor-pointer"
               >
                 취소
               </button>
-              <button
+              <button 
                 onClick={executeDeleteUserFlower}
-                className="flex-1 bg-rose-500 text-white py-3 rounded-2xl text-xs font-bold hover:bg-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
+                className="py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition cursor-pointer shadow-xs"
               >
                 삭제하기
               </button>

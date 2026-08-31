@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 크롬, 사파리, 오페라, 엣지 스크롤바 숨기기 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* 파이어폭스, 익스플로러 스크롤바 숨기기 */
+html {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
