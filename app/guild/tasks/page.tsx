@@ -94,7 +94,7 @@ const ROLE_WEIGHT: { [key: string]: number } = {
 
 const ROLES = ['길드장', '부길드장', '임원', '정예', '멤버'];
 const STATUSES = ['진행', '중단', '완료'];
-const FLOWER_GRADES = ['UR+', 'UR', 'SSR', 'SR+', 'SR', 'R'];
+const FLOWER_GRADES = ['UR+', 'UR', 'SSR', 'SR+', 'SR', 'R', 'N'];
 
 export default function GuildTasksPage() {
   const router = useRouter();
