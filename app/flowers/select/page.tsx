@@ -80,10 +80,18 @@ export default function FlowerSelectPage() {
   }, [selectedFlower, deleteTarget]);
 
   useEffect(() => {
+    
     const sNick = localStorage.getItem('user_nickname') || '';
     const sId = localStorage.getItem('user_id') || '';
     const sGId = localStorage.getItem('guild_id');
-
+    
+    /**재접속 안내 경고창 추가 */
+    if (!sNick) {
+      alert('재접속이 필요합니다.');
+      window.location.href = "/";
+      return;
+    }
+    
     setNickname(sNick);
     setUserId(sId);
     if (sGId) setGuildId(Number(sGId));
