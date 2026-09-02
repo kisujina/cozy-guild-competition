@@ -96,16 +96,16 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
         
         {/* 1. 상단 앱 바 (스크롤 내리면 위로 숨겨지고, 올리면 스르륵 나타남) */}
         <header className={`w-full fixed top-0 left-1/2 -translate-x-1/2 max-w-md bg-white/85 backdrop-blur-md border-b border-stone-200/60 px-4 py-3 flex items-center justify-between shadow-xs z-30 transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-pink-50 text-pink-400 flex items-center justify-center shadow-inner">
+          <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+            <div className="w-10 h-10 rounded-2xl bg-pink-50 text-pink-400 flex items-center justify-center shadow-inner shrink-0">
               <FaSeedling className="text-lg" />
             </div>
-            <div>
-              <h1 className="text-base font-bold text-stone-800 tracking-tight">{guildName || '길드명 없음'}</h1>
-              <p className="text-xs text-stone-400 font-medium">{nickname}님 {dayOfWeek}요팅 하세요❤️</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base font-bold text-stone-800 tracking-tight truncate">{guildName || '길드명 없음'}</h1>
+              <p className="text-[11px] sm:text-xs text-stone-400 font-medium tracking-tight shrink min-w-0 truncate">🤗{nickname}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleOpenNotice}
               className="relative p-2 text-stone-600 hover:bg-stone-100 rounded-full transition-colors cursor-pointer"
