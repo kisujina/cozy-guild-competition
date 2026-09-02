@@ -206,7 +206,7 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-500 ml-1">닉네임 (내 캐릭터명)</label>
+            <label className="block text-xs font-semibold text-slate-500 ml-1">닉네임</label>
             <div className="relative">
               <FaUserTag className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 text-sm" />
               <input
