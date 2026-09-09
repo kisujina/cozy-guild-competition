@@ -68,6 +68,19 @@ export default function FlowerSelectPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; nickname: string } | null>(null);
 
+  //유저의 role 
+  const [userRole, setUserRole] = useState<string | null>(null);
+  // 꽃 등록, 수정 모달
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingFlower, setEditingFlower] = useState<any | null>(null); // 수정할 꽃 데이터 (null이면 신규 등록)
+  // 폼 입력 필드 상태
+  const [name, setName] = useState('');
+  const [grade, setGrade] = useState('UR+'); // 기본 등급 예시
+  const [score, setScore] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null); // 업로드할 이미지 파일
+  const [previewUrl, setPreviewUrl] = useState(''); // 이미지 미리보기용
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (selectedFlower || deleteTarget !== null) {
       document.body.style.overflow = 'hidden';
@@ -110,6 +123,30 @@ export default function FlowerSelectPage() {
     }
   }, [mainFilter, subFilter, nickname]);
 
+  // 유저 정보(profiles 테이블)를 가져오는 로직 예시
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const userNick = localStorage.getItem('user_nickname'); // 혹은 세션/auth 정보
+      if (!userNick) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('nickname', userNick)
+        .single();
+
+      if (!error && data) {
+        setUserRole(data.role); // '관리자', '길드장', '부길드장', '임원', '정예' 등
+      }
+    };
+
+    fetchUserRole();
+  }, []);
+
+  // 권한 확인 함수... (꽃의 등록&수정&삭제는 오직 관리자만 가능하다. 일단은 신규 꽃 등록 기능만 오픈)
+  const isSuManager = userRole === '관리자' ;
+  const isManager = userRole === '길드장' || userRole === '부길드장';
+  
   const toggleFavorite = (flowerId: number) => {
     const newFavs = favoriteFlowerIds.includes(flowerId)
       ? favoriteFlowerIds.filter(id => id !== flowerId)
@@ -175,6 +212,171 @@ export default function FlowerSelectPage() {
       if (target === 'guild_mine' && mainFilter === 'all') setMainFilter('not_mine');
       else if (target === 'guild_not_mine' && mainFilter === 'all') setMainFilter('mine');
       setSubFilter(target);
+    }
+  };
+
+  // 신규 꽃 등록 모달 열기
+  const handleOpenCreateModal = () => {
+    setEditingFlower(null);
+    setName('');
+    setGrade('UR+');
+    setScore('');
+    setImageFile(null);
+    setPreviewUrl('');
+    setIsModalOpen(true);
+  };
+
+  // 꽃 수정 모달 열기 (기존 꽃 데이터를 인자로 전달받음)
+  const handleOpenEditModal = (flower: any) => {
+    setEditingFlower(flower);
+    setName(flower.name || '');
+    setGrade(flower.grade || 'UR+');
+    setScore(flower.score ? String(flower.score) : '');
+    setImageFile(null);
+    setPreviewUrl(flower.image_url || ''); // 기존 이미지 경로 설정
+    setIsModalOpen(true);
+  };
+
+  const handleSaveFlower = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !score.trim()) {
+      alert('꽃 이름과 점수를 모두 입력해주세요.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // 1. 공백을 모두 제거한 입력 이름 정규화
+      const normalizedInputName = name.replace(/[^a-zA-Z0-9가-힣]/g, '');
+
+      // 2. DB에 존재하는 기존 꽃들의 이름 조회
+      const { data: existingFlowers, error: fetchError } = await supabase
+        .from('flowers')
+        .select('id, name');
+
+      if (fetchError) throw fetchError;
+
+      // 3. 공백을 제외한 이름이 중복되는지 검사
+      const isDuplicate = existingFlowers?.some((flower) => {
+        // 수정 중일 때 자기 자신의 이름은 중복 검사에서 제외
+        if (editingFlower && flower.id === editingFlower.id) return false;
+        return flower.name.replace(/[^a-zA-Z0-9가-힣]/g, '') === normalizedInputName;
+      });
+
+      if (isDuplicate) {
+        alert('이미 존재하는 꽃 이름입니다. 확인 후 등록 바랍니다.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      let imageUrl = previewUrl; // 수정 시 새 이미지를 안 고르면 기존 URL 유지
+
+      // 4. 새 이미지 파일이 선택된 경우 Supabase Storage에 업로드
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        // 1. 숫자를 먼저 문자열로 바꾼 뒤 substring 사용 (권장)
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('flowers') // 아까 생성한 스토리지 버킷 이름
+          .upload(fileName, imageFile);
+
+        if (uploadError) {
+          throw new Error('이미지 업로드 실패: ' + uploadError.message);
+        }
+
+        // 공개 URL 가져오기
+        const { data: publicUrlData } = supabase.storage
+          .from('flowers')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrlData.publicUrl;
+      }
+
+      // 5. flowers 테이블에 INSERT 또는 UPDATE 처리
+      if (editingFlower) {
+        // 수정 (UPDATE)
+        const { error } = await supabase
+          .from('flowers')
+          .update({
+            name,
+            grade,
+            score: Number(score),
+            image_url: imageUrl,
+          })
+          .eq('id', editingFlower.id);
+
+        if (error) throw error;
+        alert('꽃 정보가 성공적으로 수정되었습니다.');
+      } else {
+        // 신규 등록 (INSERT)
+        const { error } = await supabase
+          .from('flowers')
+          .insert([{
+            name,
+            grade,
+            score: Number(score),
+            image_url: imageUrl,
+          }]);
+
+        if (error) throw error;
+        alert('새로운 꽃이 등록되었습니다.');
+      }
+
+      // 모달 닫기 및 데이터 리프레시 (fetchFlowers는 목록 불러오는 함수명에 맞게 변경)
+      setIsModalOpen(false);
+
+      // ⭐ [핵심] 저장 직후 리스트를 다시 불러와 화면을 즉시 갱신합니다!
+      await fetchFlowersByQuery();
+
+    } catch (error: any) {
+      alert(error.message || '처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteFlower = async (flowerId: number, flowerName: string, imageUrl: string) => {
+    if (!window.confirm(`'${flowerName}' ⚠️꽃 정보를 정말 삭제하시겠습니까? 이미지와 데이터 모두 완전히 삭제되며, 관련 데이터는 복구 할 수 없습니다.`)) return;
+
+    try {
+    // 1. 이미지 URL이 존재하고 Supabase Storage 주소인 경우 파일명 추출 후 스토리지에서 삭제
+        if (imageUrl) {
+          // 예: https://xxx.supabase.co/storage/v1/object/public/flowers/1710000000000_abc.png
+          // URL에서 버킷 이름('flowers') 뒤에 오는 파일 경로를 추출합니다.
+          const urlObj = new URL(imageUrl);
+          const pathSegments = urlObj.pathname.split('/');
+          const bucketIndex = pathSegments.indexOf('flowers');
+          
+          if (bucketIndex !== -1) {
+            // 'flowers' 이후의 경로들을 합쳐서 파일 경로(파일명)를 얻습니다.
+            const filePath = pathSegments.slice(bucketIndex + 1).join('/');
+
+            const { error: storageError } = await supabase.storage
+              .from('flowers')
+              .remove([filePath]);
+
+            if (storageError) {
+              console.error('스토리지 이미지 삭제 실패:', storageError.message);
+              // 이미지 삭제가 실패하더라도 DB 삭제는 진행할지, 여기서 멈출지 선택할 수 있습니다.
+            }
+          }
+        }
+
+        // 2. flowers 테이블에서 데이터 삭제
+        const { error: dbError } = await supabase
+          .from('flowers')
+          .delete()
+          .eq('id', flowerId);
+
+        if (dbError) throw dbError;
+
+        alert('꽃 정보와 이미지가 성공적으로 삭제되었습니다.');
+      
+      // ⭐ [핵심] 삭제 직후 리스트를 다시 불러와 화면을 즉시 갱신합니다!
+      await fetchFlowersByQuery();
+
+    } catch (error: any) {
+      alert(error.message || '삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -308,6 +510,15 @@ export default function FlowerSelectPage() {
                 {sortOrder === 'desc' ? <FaSortAmountDown className="text-amber-500 text-[10px]" /> : <FaSortAmountUp className="text-amber-500 text-[10px]" />}
                 <span>{sortOrder === 'desc' ? '내림차순' : '오름차순'}</span>
               </button>
+              {/* 관리자,길드장,부길드장,임원 꽃 등록 버튼 노출 */}
+              {(isSuManager || isManager) && (
+                <button
+                  onClick={() => handleOpenCreateModal()}
+                  className="bg-purple-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold"
+                >
+                  + 신규 꽃 등록
+                </button>
+              )}
             </div>
           </div>
           
@@ -380,7 +591,7 @@ export default function FlowerSelectPage() {
           <div className="mx-3 mt-1.5 flex items-start gap-1.5 text-rose-500 text-xs bg-rose-50/90 backdrop-blur-xs p-2.5 rounded-xl border border-rose-100 shadow-2xs">
             <FaExclamationCircle className="mt-0.5 shrink-0 text-sm" />
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
-              신규 꽃 추가 요청은 상단의 <FaRegQuestionCircle className="text-sm" />를 눌러주세요.
+              신규 꽃 추가 요청은 '길드장'/'부길드장'에게 요청해주세요.
             </span>
           </div>
         )}
@@ -455,22 +666,53 @@ export default function FlowerSelectPage() {
                         </h3>
                       </div>
                     </div>
+                    
+                    {/* 우측 액션 버튼 영역 (즐겨찾기 + 관리자용 수정 버튼) */}
+                    <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                      {/* 관리자의 경우에만 노출되는 수정/삭제 버튼 */}
+                      {isSuManager && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditModal(flower); // 수정 모달 오픈 함수
+                            }}
+                            className="w-6 h-6 rounded-full bg-stone-50 hover:bg-blue-50 text-stone-400 hover:text-blue-500 flex items-center justify-center transition cursor-pointer"
+                            title="꽃 정보 수정"
+                          >
+                            <span className="text-[10px] font-bold">수정</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFlower(flower.id, flower.name, flower.image_url);
+                            }}
+                            className="w-6 h-6 rounded-full bg-stone-50 hover:bg-rose-50 text-stone-400 hover:text-rose-500 flex items-center justify-center transition cursor-pointer"
+                            title="꽃 정보 삭제"
+                          >
+                            <span className="text-[10px] font-bold">삭제</span>
+                          </button>
+                        </>
+                      )}
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(flower.id);
-                      }}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center transition shrink-0 ml-1.5 cursor-pointer ${
-                        isFavorite 
-                          ? 'text-pink-500 bg-pink-50 hover:bg-pink-100' 
-                          : 'text-stone-300 bg-stone-50 hover:bg-stone-100 hover:text-stone-400'
-                      }`}
-                      title={isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-                    >
-                      {isFavorite ? <FaHeart className="text-[10px]" /> : <FaRegHeart className="text-[10px]" />}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(flower.id);
+                        }}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center transition shrink-0 ml-1.5 cursor-pointer ${
+                          isFavorite 
+                            ? 'text-pink-500 bg-pink-50 hover:bg-pink-100' 
+                            : 'text-stone-300 bg-stone-50 hover:bg-stone-100 hover:text-stone-400'
+                        }`}
+                        title={isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                      >
+                        {isFavorite ? <FaHeart className="text-[10px]" /> : <FaRegHeart className="text-[10px]" />}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -699,6 +941,112 @@ export default function FlowerSelectPage() {
           </div>
         </div>
       )}
+
+      {/* 꽃 등록 / 수정 모달 */}
+      {isModalOpen && (
+        <div 
+          onClick={() => setIsModalOpen(false)}
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-[28px] p-6 max-w-sm w-full shadow-2xl border border-stone-100 space-y-4"
+          >
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-extrabold text-stone-900">
+                {editingFlower ? '🌸꽃 정보 수정' : '🌸신규 꽃 등록'}
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-all cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFlower} className="space-y-3.5 text-xs">
+              {/* 꽃 이름 */}
+              <div>
+                <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">꽃 이름</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="예: 꽃나무 정원"
+                  className="w-full px-4 py-3 bg-stone-50 rounded-2xl outline-none font-medium border border-stone-200 focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all"
+                  required
+                />
+              </div>
+
+              {/* 등급 및 점수 */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">등급</label>
+                  <select
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    className="w-full px-3 py-3 bg-stone-50 rounded-2xl outline-none font-medium border border-stone-200 focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all"
+                  >
+                    <option value="UR+">UR+</option>
+                    <option value="UR">UR</option>
+                    <option value="SSR">SSR</option>
+                    <option value="SR+">SR+</option>
+                    <option value="SR">SR</option>
+                    <option value="R">R</option>
+                    <option value="N">N</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">점수</label>
+                  <input
+                    type="number"
+                    value={score}
+                    onChange={(e) => setScore(e.target.value)}
+                    placeholder="예: 30"
+                    className="w-full px-4 py-3 bg-stone-50 rounded-2xl outline-none font-medium border border-stone-200 focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* 이미지 업로드 */}
+              <div>
+                <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">꽃 이미지</label>
+                <div className="flex items-center gap-3">
+                  {previewUrl && (
+                    <img 
+                      src={previewUrl} 
+                      alt="미리보기" 
+                      className="w-12 h-12 rounded-xl object-cover border border-stone-200 shrink-0" 
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setImageFile(file);
+                        setPreviewUrl(URL.createObjectURL(file)); // 로컬 미리보기 생성
+                      }
+                    }}
+                    className="w-full text-[11px] text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-pink-500 text-white font-bold py-3.5 rounded-2xl hover:bg-pink-600 transition-all cursor-pointer shadow-xs active:scale-95 mt-2 disabled:opacity-50"
+              >
+                {isSubmitting ? '저장 중...' : (editingFlower ? '수정 완료' : '등록하기')}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
     </NavigationLayout>
   );
 }

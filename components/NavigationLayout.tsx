@@ -189,9 +189,9 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                   <span className="inline-block px-2 py-0.5 bg-[#e8deff] text-[#6e56cf] text-xs font-semibold rounded-md mb-1">
                     UPDATE
                   </span>
-                  <h3 className="font-bold text-stone-900 mb-1">길드 앱 주요 업데이트 안내</h3>
-                  <p className="text-stone-600 text-xs">
-                    길드 운영 편의성과 UI/UX가 대폭 개선되었습니다. 변경된 내용을 확인해 주세요!
+                  <h3 className="font-bold text-stone-900 mb-1">주요 업데이트 안내</h3>
+                  <p className="whitespace-nowrap text-stone-600 text-xs">
+                    아래 변경된 내용을 확인해 주세요.🫶
                   </p>
                 </div>
 
@@ -202,36 +202,24 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                   <ul className="space-y-1.5 pl-1 text-xs">
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>전체 UI/UX 개선 작업 완료</span>
+                      <span>길드장/부길드장 권한에 한하여 <strong>[신규 꽃 등록]</strong> 기능 추가</span>
                     </li>
+                  </ul>
+                  <ul className="space-y-1.5 pl-1 text-xs">
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>길드원 공용 비밀번호 추가</span>
+                      <span><strong>[신규 꽃 등록]</strong>시 꽃 이미지 업로드 기능 추가</span>
                     </li>
+                  </ul>
+                  <ul className="space-y-1.5 pl-1 text-xs">
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span><strong>[임무 꽃 조회]</strong> 필터 검색 옵션, 즐겨찾기 꽃 리스트 추가</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-[#9b87f5] font-bold">•</span>
-                      <span><strong>[임무 관리]</strong> 길드원 별로 보유 꽃 관리 기능 추가</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-[#9b87f5] font-bold">•</span>
-                      <span><strong>[공지사항]</strong>에서 길드 공지 업로드 기능 추가</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>꽃 정보 길드전 점수, 길드원 별 절품 추가 점수 기능 추가</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>길드원별 길드전 임무 상태 관리 기능 추가</span>
+                      <span>등록된 꽃의 <strong>추가&삭제</strong> 관련 문의가 있을 경우 편하게 문의 주세요!</span>
                     </li>
                   </ul>
                 </div>
 
-                <div className="space-y-2 pt-1 border-t border-stone-200/40">
+                {/* <div className="space-y-2 pt-1 border-t border-stone-200/40">
                   <h4 className="font-bold text-xs text-rose-500 uppercase tracking-wider flex items-center gap-1">
                     <span>🗑️ 삭제된 사항</span>
                   </h4>
@@ -245,7 +233,7 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                       <span>임무 정보 및 길드원 정보 상세 설정 페이지 삭제</span>
                     </li>
                   </ul>
-                </div>
+                </div> */}
               </div>
 
               <div className="pt-2">
