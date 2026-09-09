@@ -214,7 +214,13 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                   <ul className="space-y-1.5 pl-1 text-xs">
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>등록된 꽃의 <strong>추가&삭제</strong> 관련 문의가 있을 경우 편하게 문의 주세요!</span>
+                      <span>꽃 이미지 <strong>클릭/터치</strong> 시 이미지 크게 보기 기능 추가</span>
+                    </li>
+                  </ul>
+                  <ul className="space-y-1.5 pl-1 text-xs">
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#9b87f5] font-bold">•</span>
+                      <span>꽃 <strong>수정&삭제</strong> 관련 문의가 생길 경우 편하게 문의 주세요!🤗</span>
                     </li>
                   </ul>
                 </div>

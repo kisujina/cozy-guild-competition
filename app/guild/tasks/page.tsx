@@ -141,6 +141,8 @@ export default function GuildTasksPage() {
   const [isBatchOpen, setIsBatchOpen] = useState(false);
   const [batchGrades, setBatchGrades] = useState<string[]>([]);
   const [batchPage, setBatchPage] = useState(1);
+  /**꽃 확대 보기 모달 */
+  const [previewImageModal, setPreviewImageModal] = useState<string | null>(null);
 
   // 모달창 활성화 시 뒤쪽 화면 스크롤 방지 처리
   useEffect(() => {
@@ -558,9 +560,9 @@ export default function GuildTasksPage() {
                         setBatchGrades([]);
                         setBatchPage(1);
                       }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-600 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-pink-100 text-yellow-700 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
                     >
-                      <FaSeedling className="text-xs text-pink-500" /> <span>보유 꽃</span>
+                      <FaSeedling className="text-xs text-green-500" /> <span>보유 꽃</span>
                     </button>
 
                     <button
@@ -823,8 +825,25 @@ export default function GuildTasksPage() {
                             return (
                               <div key={flower.id} className="py-2 px-1 border-b border-stone-100 flex items-center justify-between gap-2.5">
                                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                  <div className="w-7 h-7 rounded-lg bg-stone-100 overflow-hidden flex items-center justify-center shrink-0">
-                                    {flower.image_url ? <img src={flower.image_url} alt="" className="w-full h-full object-cover" /> : <FaSeedling className="text-amber-300 text-xs" />}
+                                  <div 
+                                    onClick={() => {
+                                      const targetImg = flower?.large_image_url || flower?.image_url;
+                                      if (targetImg) {
+                                        setPreviewImageModal(targetImg);
+                                      }
+                                    }}
+                                    className="w-7.5 h-7.5 rounded-2xl bg-stone-100 overflow-hidden flex items-center justify-center border border-stone-200/80 shrink-0 cursor-pointer group relative shadow-xs"
+                                    title="이미지 크게 보기"
+                                  >
+                                    {flower?.image_url ? (
+                                      <img src={flower.image_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
+                                    ) : (
+                                      <FaSeedling className="text-stone-400 text-base" />
+                                    )}
+                                    {/* 세련된 호버 돋보기 배지 */}
+                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs">
+                                      🔍
+                                    </div>
                                   </div>
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 flex-nowrap overflow-hidden">
@@ -993,9 +1012,26 @@ export default function GuildTasksPage() {
                       return (
                         <div key={item.id} className="py-2 px-1 border-b border-stone-100 flex items-center justify-between gap-2.5">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="w-8 h-8 rounded-lg bg-stone-100 overflow-hidden flex items-center justify-center shrink-0">
-                              {flower.image_url ? <img src={flower.image_url} alt="" className="w-full h-full object-cover" /> : <FaSeedling className="text-amber-300 text-xs" />}
+                          <div 
+                            onClick={() => {
+                              const targetImg = flower?.large_image_url || flower?.image_url;
+                              if (targetImg) {
+                                setPreviewImageModal(targetImg);
+                              }
+                            }}
+                            className="w-12 h-12 rounded-2xl bg-stone-100 overflow-hidden flex items-center justify-center border border-stone-200/80 shrink-0 cursor-pointer group relative shadow-xs"
+                            title="이미지 크게 보기"
+                          >
+                            {flower?.image_url ? (
+                              <img src={flower.image_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
+                            ) : (
+                              <FaSeedling className="text-stone-400 text-base" />
+                            )}
+                            {/* 세련된 호버 돋보기 배지 */}
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs">
+                              🔍
                             </div>
+                          </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 flex-nowrap overflow-hidden">
                                 <span className={`text-[10px] shrink-0 ${getGradeBadgeColor(flower.grade)}`}>{flower.grade}</span>
@@ -1056,6 +1092,34 @@ export default function GuildTasksPage() {
           </div>
         )}
 
+      {/* 적당한 크기의 이미지 확대 보기 공용 모달 */}
+      {previewImageModal && (
+        <div 
+          onClick={() => setPreviewImageModal(null)}
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999] p-4 animate-in fade-in duration-200 cursor-zoom-out"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-sm w-full bg-stone-900/95 rounded-[32px] overflow-hidden shadow-2xl border border-stone-800 p-4 flex flex-col items-center"
+          >
+            <button 
+              type="button"
+              onClick={() => setPreviewImageModal(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-800/80 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-all cursor-pointer z-10 text-xs font-bold border border-stone-700 shadow-sm"
+            >
+              ✕
+            </button>
+            
+            <div className="w-full overflow-hidden rounded-2xl bg-black/50 flex items-center justify-center p-3 mt-2">
+              <img 
+                src={previewImageModal} 
+                alt="꽃 고화질 확대 이미지" 
+                className="w-full h-auto max-h-[70vh] object-contain rounded-xl"
+              />
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </NavigationLayout>
   );
