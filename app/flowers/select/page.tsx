@@ -61,6 +61,8 @@ export default function FlowerSelectPage() {
   const [modalMemberSuggestions, setModalMemberSuggestions] = useState<any[]>([]);
   const [modalStatusFilter, setModalStatusFilter] = useState<string>('ALL');
 
+  /**꽃 확대 보기 모달 */
+  const [previewImageModal, setPreviewImageModal] = useState<string | null>(null);
   const [guildMembers, setGuildMembers] = useState<any[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -644,12 +646,25 @@ export default function FlowerSelectPage() {
                     className="bg-white p-2.5 rounded-2xl border border-stone-200/80 shadow-[0_2px_6px_rgba(0,0,0,0.02)] flex items-center justify-between cursor-pointer hover:border-pink-300 hover:shadow-md transition group relative"
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className="w-10 h-10 rounded-xl bg-stone-100 overflow-hidden flex items-center justify-center border border-stone-200/60 shrink-0 shadow-2xs">
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // 큰 이미지 경로가 있다면 큰 이미지 경로를, 없다면 일반 이미지 경로를 모달에 전달
+                          const targetImg = flower.large_image_url || flower.image_url;
+                          if (targetImg) setPreviewImageModal(targetImg);
+                        }}
+                        className="w-10 h-10 rounded-xl bg-stone-100 overflow-hidden flex items-center justify-center border border-stone-200/60 shrink-0 cursor-pointer group relative shadow-2xs"
+                        title="이미지 크게 보기"
+                      >
                         {flower.image_url ? (
                           <img src={flower.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
                         ) : (
                           <FaSeedling className="text-stone-400 text-sm" />
                         )}
+                        {/* 마우스 올렸을 때 뜨는 세련된 돋보기 오버레이 효과 */}
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px]">
+                          🔍
+                        </div>
                       </div>
                       
                       <div className="min-w-0 flex-1">
@@ -720,6 +735,35 @@ export default function FlowerSelectPage() {
           )}
         </div>
       </div>    
+      
+      {/* 적당한 크기의 이미지 확대 보기 공용 모달 */}
+      {previewImageModal && (
+        <div 
+          onClick={() => setPreviewImageModal(null)}
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999] p-4 animate-in fade-in duration-200 cursor-zoom-out"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-sm w-full bg-stone-900/95 rounded-[32px] overflow-hidden shadow-2xl border border-stone-800 p-4 flex flex-col items-center"
+          >
+            <button 
+              type="button"
+              onClick={() => setPreviewImageModal(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-800/80 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-all cursor-pointer z-10 text-xs font-bold border border-stone-700 shadow-sm"
+            >
+              ✕
+            </button>
+            
+            <div className="w-full overflow-hidden rounded-2xl bg-black/50 flex items-center justify-center p-3 mt-2">
+              <img 
+                src={previewImageModal} 
+                alt="꽃 고화질 확대 이미지" 
+                className="w-full h-auto max-h-[70vh] object-contain rounded-xl"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 꽃 상세정보 모달 */}
       {selectedFlower && (
@@ -736,8 +780,25 @@ export default function FlowerSelectPage() {
           >
             <div className="flex items-center justify-between border-b border-stone-200/60 pb-3 relative">
               <div className="flex items-center gap-2.5">
-                <div className="w-11 h-11 rounded-2xl bg-white overflow-hidden flex items-center justify-center border border-amber-200/80 shadow-2xs shrink-0">
-                  {selectedFlower.image_url ? <img src={selectedFlower.image_url} alt="" className="w-full h-full object-cover" /> : <FaSeedling className="text-amber-400 text-base" />}
+                <div 
+                  onClick={() => {
+                    const targetImg = selectedFlower?.large_image_url || selectedFlower?.image_url;
+                    if (targetImg) {
+                      setPreviewImageModal(targetImg);
+                    }
+                  }}
+                  className="w-12 h-12 rounded-2xl bg-stone-100 overflow-hidden flex items-center justify-center border border-stone-200/80 shrink-0 cursor-pointer group relative shadow-xs"
+                  title="이미지 크게 보기"
+                >
+                  {selectedFlower?.image_url ? (
+                    <img src={selectedFlower.image_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
+                  ) : (
+                    <FaSeedling className="text-stone-400 text-base" />
+                  )}
+                  {/* 세련된 호버 돋보기 배지 */}
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs">
+                    🔍
+                  </div>
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
