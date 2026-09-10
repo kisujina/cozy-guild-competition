@@ -6,9 +6,9 @@ import { supabase } from '@/lib/supabase';
 import NavigationLayout from '@/components/NavigationLayout';
 import { 
   FaUsers, FaUserPlus, FaSearch, FaTrashAlt, 
-  FaEdit, FaSeedling, FaTimes, 
+  FaEdit, FaSeedling, FaTimes, FaSpinner,
   FaListUl, FaCheckCircle, FaTimesCircle, FaChevronDown, FaChevronUp, FaCheck,
-  FaExclamationTriangle
+  FaExclamationTriangle,
 } from 'react-icons/fa';
 
 // [등급 & 상태 스타일 정의 생략 - 기존과 동일]
@@ -1088,34 +1088,48 @@ export default function GuildTasksPage() {
           </div>
         )}
 
-      {/* 적당한 크기의 이미지 확대 보기 공용 모달 */}
-      {previewImageModal && (
-        <div 
-          onClick={() => setPreviewImageModal(null)}
-          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999] p-4 animate-in fade-in duration-200 cursor-zoom-out"
-        >
+        {/* 🌸 X 버튼을 모달 내부 상단 우측으로 깔끔하게 배치한 확대 보기 모달 */}
+        {previewImageModal && (
           <div 
-            onClick={(e) => e.stopPropagation()}
-            className="relative max-w-sm w-full bg-stone-900/95 rounded-[32px] overflow-hidden shadow-2xl border border-stone-800 p-4 flex flex-col items-center"
+            onClick={() => setPreviewImageModal(null)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[999] p-4 cursor-zoom-out"
           >
-            <button 
-              type="button"
-              onClick={() => setPreviewImageModal(null)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-800/80 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-all cursor-pointer z-10 text-xs font-bold border border-stone-700 shadow-sm"
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-[320px] w-full bg-stone-900 rounded-[28px] overflow-hidden shadow-2xl border border-stone-800 p-5 flex flex-col items-center"
             >
-              ✕
-            </button>
-            
-            <div className="w-full overflow-hidden rounded-2xl bg-black/50 flex items-center justify-center p-3 mt-2">
-              <img 
-                src={previewImageModal} 
-                alt="꽃 고화질 확대 이미지" 
-                className="w-full h-auto max-h-[70vh] object-contain rounded-xl"
-              />
+              {/* 모달 내부 우측 상단으로 이동 및 크기 최적화된 X 버튼 */}
+              <div className="w-full flex justify-end mb-2">
+                <button 
+                  type="button"
+                  onClick={() => setPreviewImageModal(null)}
+                  className="w-6 h-6 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-bold border border-stone-700 shadow-xs"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* 찌그러짐 방지 및 로딩 처리를 위한 고정 컨테이너 */}
+              <div className="w-full aspect-square rounded-2xl bg-black/50 flex items-center justify-center relative overflow-hidden border border-stone-800/80">
+                
+                {/* 이미지 로딩 중 스피너 */}
+                <div className="absolute inset-0 flex items-center justify-center bg-stone-900/60 z-0">
+                  <FaSpinner className="animate-spin text-pink-400 text-xl" />
+                </div>
+
+                <img 
+                  src={previewImageModal} 
+                  alt="꽃 고화질 확대 이미지" 
+                  onLoad={(e) => {
+                    (e.currentTarget as HTMLImageElement).classList.remove('opacity-0');
+                    (e.currentTarget as HTMLImageElement).classList.add('opacity-100');
+                  }}
+                  className="w-full h-full object-contain rounded-xl relative z-10 opacity-0 transition-opacity duration-200"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </NavigationLayout>
   );
