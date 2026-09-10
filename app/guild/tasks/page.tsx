@@ -14,9 +14,9 @@ import {
 // [등급 & 상태 스타일 정의 생략 - 기존과 동일]
 const getGradeBadgeColor = (grade: string) => {
   const g = grade?.toUpperCase() || '';
-  if (g === 'UR+' || g === 'UR') return 'text-pink-600 font-extrabold';
+  if (g === 'UR') return 'text-pink-600 font-extrabold';
   if (g === 'SSR') return 'text-amber-600 font-extrabold';
-  if (g === 'SR+' || g === 'SR') return 'text-purple-600 font-extrabold';
+  if (g === 'SR') return 'text-purple-600 font-extrabold';
   if (g === 'R') return 'text-sky-600 font-extrabold';
   if (g === 'N') return 'text-emerald-600 font-extrabold';
   return 'text-stone-600 font-extrabold';
@@ -58,10 +58,8 @@ const getRoleStyle = (role: string, isSelected: boolean = false) => {
 const getFlowerGradeChipStyle = (gradeKey: string, isSelected: boolean) => {
   if (isSelected) {
     switch (gradeKey) {
-      case 'UR+':
       case 'UR': return 'bg-pink-500 text-white shadow-xs';
       case 'SSR': return 'bg-amber-400 text-stone-900 shadow-xs font-extrabold';
-      case 'SR+':
       case 'SR': return 'bg-purple-500 text-white shadow-xs';
       case 'R': return 'bg-sky-500 text-white shadow-xs';
       case 'N': return 'bg-emerald-500 text-white shadow-xs';
@@ -69,10 +67,8 @@ const getFlowerGradeChipStyle = (gradeKey: string, isSelected: boolean) => {
     }
   }
   switch (gradeKey) {
-    case 'UR+':
     case 'UR': return 'text-pink-600 font-bold hover:bg-pink-50';
     case 'SSR': return 'text-amber-700 font-bold hover:bg-amber-50';
-    case 'SR+':
     case 'SR': return 'text-purple-600 font-bold hover:bg-purple-50';
     case 'R': return 'text-sky-600 font-bold hover:bg-sky-50';
     case 'N': return 'text-emerald-600 font-bold hover:bg-emerald-50';
@@ -81,7 +77,7 @@ const getFlowerGradeChipStyle = (gradeKey: string, isSelected: boolean) => {
 };
 
 const GRADE_ORDER: { [key: string]: number } = {
-  'UR+': 7, 'UR': 6, 'SSR': 5, 'SR+': 4, 'SR': 3, 'R': 2, 'N': 1
+  'UR': 5, 'SSR': 4, 'SR': 3, 'R': 2, 'N': 1
 };
 
 const ROLE_WEIGHT: { [key: string]: number } = {
@@ -94,7 +90,7 @@ const ROLE_WEIGHT: { [key: string]: number } = {
 
 const ROLES = ['길드장', '부길드장', '임원', '정예', '멤버'];
 const STATUSES = ['진행', '중단', '완료'];
-const FLOWER_GRADES = ['UR+', 'UR', 'SSR', 'SR+', 'SR', 'R', 'N'];
+const FLOWER_GRADES = ['UR', 'SSR', 'SR', 'R', 'N'];
 
 export default function GuildTasksPage() {
   const router = useRouter();

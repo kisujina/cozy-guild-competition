@@ -14,9 +14,9 @@ import {
 // ----------------------------------------------------------------------
 const getGradeBadgeColor = (grade: string) => {
   const g = grade?.toUpperCase() || '';
-  if (g === 'UR+' || g === 'UR') return 'bg-pink-100 text-pink-700 border-pink-200';
+  if (g === 'UR') return 'bg-pink-100 text-pink-700 border-pink-200';
   if (g === 'SSR') return 'bg-amber-100 text-amber-800 border-amber-200';
-  if (g === 'SR+' || g === 'SR') return 'bg-purple-100 text-purple-700 border-purple-200';
+  if (g === 'SR') return 'bg-purple-100 text-purple-700 border-purple-200';
   if (g === 'R') return 'bg-sky-100 text-sky-700 border-sky-200';
   if (g === 'N') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
   return 'bg-stone-100 text-stone-600 border-stone-200';
@@ -35,7 +35,7 @@ const getStatusBadgeStyle = (status: string) => {
 };
 
 const GRADE_ORDER: { [key: string]: number } = {
-  'UR+': 7, 'UR': 6, 'SSR': 5, 'SR+': 4, 'SR': 3, 'R': 2, 'N': 1
+  'UR': 5, 'SSR': 4, 'SR': 3, 'R': 2, 'N': 1
 };
 
 export default function FlowerSelectPage() {
@@ -77,7 +77,7 @@ export default function FlowerSelectPage() {
   const [editingFlower, setEditingFlower] = useState<any | null>(null); // 수정할 꽃 데이터 (null이면 신규 등록)
   // 폼 입력 필드 상태
   const [name, setName] = useState('');
-  const [grade, setGrade] = useState('UR+'); // 기본 등급 예시
+  const [grade, setGrade] = useState('UR'); // 기본 등급 예시
   const [score, setScore] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null); // 업로드할 이미지 파일
   const [previewUrl, setPreviewUrl] = useState(''); // 이미지 미리보기용
@@ -221,7 +221,7 @@ export default function FlowerSelectPage() {
   const handleOpenCreateModal = () => {
     setEditingFlower(null);
     setName('');
-    setGrade('UR+');
+    setGrade('UR');
     setScore('');
     setImageFile(null);
     setPreviewUrl('');
@@ -232,7 +232,7 @@ export default function FlowerSelectPage() {
   const handleOpenEditModal = (flower: any) => {
     setEditingFlower(flower);
     setName(flower.name || '');
-    setGrade(flower.grade || 'UR+');
+    setGrade(flower.grade || 'UR');
     setScore(flower.score ? String(flower.score) : '');
     setImageFile(null);
     setPreviewUrl(flower.image_url || ''); // 기존 이미지 경로 설정
@@ -535,20 +535,20 @@ export default function FlowerSelectPage() {
               </div>
 
               <div className="flex items-center gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                {['UR+', 'UR', 'SSR', 'SR+', 'SR', 'R', 'N'].map((grade) => {
+                {['UR', 'SSR', 'SR', 'R', 'N'].map((grade) => {
                   const isSelected = selectedGrades.includes(grade);
                   let chipColorStyle = 'bg-white/80 text-stone-600 border-stone-200/70 hover:bg-stone-100';
                   
                   if (isSelected) {
-                    if (grade === 'UR+' || grade === 'UR') chipColorStyle = 'bg-pink-500 text-white border-pink-500 shadow-xs';
+                    if (grade === 'UR') chipColorStyle = 'bg-pink-500 text-white border-pink-500 shadow-xs';
                     else if (grade === 'SSR') chipColorStyle = 'bg-amber-400 text-white border-amber-400 shadow-xs';
-                    else if (grade === 'SR+' || grade === 'SR') chipColorStyle = 'bg-purple-500 text-white border-purple-500 shadow-xs';
+                    else if (grade === 'SR') chipColorStyle = 'bg-purple-500 text-white border-purple-500 shadow-xs';
                     else if (grade === 'R') chipColorStyle = 'bg-sky-500 text-white border-sky-500 shadow-xs';
                     else if (grade === 'N') chipColorStyle = 'bg-emerald-500 text-white border-emerald-500 shadow-xs';
                   } else {
-                    if (grade === 'UR+' || grade === 'UR') chipColorStyle = 'bg-pink-50/60 text-pink-700 border-pink-200/80 hover:bg-pink-100';
+                    if (grade === 'UR') chipColorStyle = 'bg-pink-50/60 text-pink-700 border-pink-200/80 hover:bg-pink-100';
                     else if (grade === 'SSR') chipColorStyle = 'bg-amber-50/60 text-amber-800 border-amber-200/80 hover:bg-amber-100';
-                    else if (grade === 'SR+' || grade === 'SR') chipColorStyle = 'bg-purple-50/60 text-purple-700 border-purple-200/80 hover:bg-purple-100';
+                    else if (grade === 'SR') chipColorStyle = 'bg-purple-50/60 text-purple-700 border-purple-200/80 hover:bg-purple-100';
                     else if (grade === 'R') chipColorStyle = 'bg-sky-50/60 text-sky-700 border-sky-200/80 hover:bg-sky-100';
                     else if (grade === 'N') chipColorStyle = 'bg-emerald-50/60 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100';
                   }
@@ -1048,10 +1048,8 @@ export default function FlowerSelectPage() {
                     onChange={(e) => setGrade(e.target.value)}
                     className="w-full px-3 py-3 bg-stone-50 rounded-2xl outline-none font-medium border border-stone-200 focus:bg-white focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition-all"
                   >
-                    <option value="UR+">UR+</option>
                     <option value="UR">UR</option>
                     <option value="SSR">SSR</option>
-                    <option value="SR+">SR+</option>
                     <option value="SR">SR</option>
                     <option value="R">R</option>
                     <option value="N">N</option>
