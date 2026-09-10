@@ -79,8 +79,10 @@ export default function FlowerSelectPage() {
   const [name, setName] = useState('');
   const [grade, setGrade] = useState('UR'); // 기본 등급 예시
   const [score, setScore] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null); // 업로드할 이미지 파일
+  const [imageFile, setImageFile] = useState<File | null>(null); // 업로드할 리스트용 이미지 파일
   const [previewUrl, setPreviewUrl] = useState(''); // 이미지 미리보기용
+  const [largeImageFile, setLargeImageFile] = useState<File | null>(null); // 업로드할 확대용 이미지 파일
+  const [previewUrlLarge, setPreviewUrlLarge] = useState(''); // 이미지 미리보기용
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -225,6 +227,7 @@ export default function FlowerSelectPage() {
     setScore('');
     setImageFile(null);
     setPreviewUrl('');
+    setPreviewUrlLarge('');
     setIsModalOpen(true);
   };
 
@@ -236,6 +239,7 @@ export default function FlowerSelectPage() {
     setScore(flower.score ? String(flower.score) : '');
     setImageFile(null);
     setPreviewUrl(flower.image_url || ''); // 기존 이미지 경로 설정
+    setPreviewUrlLarge(flower.large_image_url || '');
     setIsModalOpen(true);
   };
 
@@ -272,8 +276,9 @@ export default function FlowerSelectPage() {
       }
 
       let imageUrl = previewUrl; // 수정 시 새 이미지를 안 고르면 기존 URL 유지
+      let largeImageUrl = previewUrlLarge; 
 
-      // 4. 새 이미지 파일이 선택된 경우 Supabase Storage에 업로드
+      // 4. 새 이미지 파일(리스트 이미지) 선택된 경우 Supabase Storage에 업로드
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         // 1. 숫자를 먼저 문자열로 바꾼 뒤 substring 사용 (권장)
@@ -294,6 +299,27 @@ export default function FlowerSelectPage() {
         imageUrl = publicUrlData.publicUrl;
       }
 
+      // 5. 새 이미지 파일(확대용이미지) 선택된 경우 Supabase Storage에 업로드
+      if (largeImageFile) {
+        const fileExt = largeImageFile.name.split('.').pop();
+        // 1. 숫자를 먼저 문자열로 바꾼 뒤 substring 사용 (권장)
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('flowers') // 아까 생성한 스토리지 버킷 이름
+          .upload(fileName, largeImageFile);
+
+        if (uploadError) {
+          throw new Error('이미지 업로드 실패: ' + uploadError.message);
+        }
+
+        // 공개 URL 가져오기
+        const { data: publicUrlData } = supabase.storage
+          .from('flowers')
+          .getPublicUrl(fileName);
+
+        largeImageUrl = publicUrlData.publicUrl;
+      }
+
       // 5. flowers 테이블에 INSERT 또는 UPDATE 처리
       if (editingFlower) {
         // 수정 (UPDATE)
@@ -304,6 +330,7 @@ export default function FlowerSelectPage() {
             grade,
             score: Number(score),
             image_url: imageUrl,
+            large_image_url: largeImageUrl,
           })
           .eq('id', editingFlower.id);
 
@@ -318,6 +345,7 @@ export default function FlowerSelectPage() {
             grade,
             score: Number(score),
             image_url: imageUrl,
+            large_image_url: largeImageUrl,
           }]);
 
         if (error) throw error;
@@ -337,11 +365,11 @@ export default function FlowerSelectPage() {
     }
   };
 
-  const handleDeleteFlower = async (flowerId: number, flowerName: string, imageUrl: string) => {
+  const handleDeleteFlower = async (flowerId: number, flowerName: string, imageUrl: string, largeImageUrl: string) => {
     if (!window.confirm(`'${flowerName}' ⚠️꽃 정보를 정말 삭제하시겠습니까? 이미지와 데이터 모두 완전히 삭제되며, 관련 데이터는 복구 할 수 없습니다.`)) return;
-
+   
     try {
-    // 1. 이미지 URL이 존재하고 Supabase Storage 주소인 경우 파일명 추출 후 스토리지에서 삭제
+        // 1. 이미지 URL이 존재하고 Supabase Storage 주소인 경우 파일명 추출 후 스토리지에서 삭제
         if (imageUrl) {
           // 예: https://xxx.supabase.co/storage/v1/object/public/flowers/1710000000000_abc.png
           // URL에서 버킷 이름('flowers') 뒤에 오는 파일 경로를 추출합니다.
@@ -363,7 +391,28 @@ export default function FlowerSelectPage() {
             }
           }
         }
+        // 2. 확대 이미지 URL이 존재하고 Supabase Storage 주소인 경우 파일명 추출 후 스토리지에서 삭제
+        if (largeImageUrl) {
+          // 예: https://xxx.supabase.co/storage/v1/object/public/flowers/1710000000000_abc.png
+          // URL에서 버킷 이름('flowers') 뒤에 오는 파일 경로를 추출합니다.
+          const urlObj = new URL(largeImageUrl);
+          const pathSegments = urlObj.pathname.split('/');
+          const bucketIndex = pathSegments.indexOf('flowers');
+          
+          if (bucketIndex !== -1) {
+            // 'flowers' 이후의 경로들을 합쳐서 파일 경로(파일명)를 얻습니다.
+            const filePath = pathSegments.slice(bucketIndex + 1).join('/');
 
+            const { error: storageError } = await supabase.storage
+              .from('flowers')
+              .remove([filePath]);
+
+            if (storageError) {
+              console.error('스토리지 이미지 삭제 실패:', storageError.message);
+              // 이미지 삭제가 실패하더라도 DB 삭제는 진행할지, 여기서 멈출지 선택할 수 있습니다.
+            }
+          }
+        }
         // 2. flowers 테이블에서 데이터 삭제
         const { error: dbError } = await supabase
           .from('flowers')
@@ -702,7 +751,7 @@ export default function FlowerSelectPage() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteFlower(flower.id, flower.name, flower.image_url);
+                              handleDeleteFlower(flower.id, flower.name, flower.image_url, flower.large_image_url);
                             }}
                             className="w-6 h-6 rounded-full bg-stone-50 hover:bg-rose-50 text-stone-400 hover:text-rose-500 flex items-center justify-center transition cursor-pointer"
                             title="꽃 정보 삭제"
@@ -1028,7 +1077,7 @@ export default function FlowerSelectPage() {
             <form onSubmit={handleSaveFlower} className="space-y-3.5 text-xs">
               {/* 꽃 이름 */}
               <div>
-                <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">꽃 이름</label>
+                <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">🌱꽃 이름</label>
                 <input
                   type="text"
                   value={name}
@@ -1042,7 +1091,7 @@ export default function FlowerSelectPage() {
               {/* 등급 및 점수 */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">등급</label>
+                  <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">🌱등급</label>
                   <select
                     value={grade}
                     onChange={(e) => setGrade(e.target.value)}
@@ -1056,7 +1105,7 @@ export default function FlowerSelectPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">점수</label>
+                  <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">🌱점수</label>
                   <input
                     type="number"
                     value={score}
@@ -1068,9 +1117,9 @@ export default function FlowerSelectPage() {
                 </div>
               </div>
 
-              {/* 이미지 업로드 */}
+              {/* 리스트용 이미지 업로드 */}
               <div>
-                <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">꽃 이미지</label>
+                <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">🌱꽃 <strong className="font-bold text-purple-500">리스트 이미지</strong> 업로드</label>
                 <div className="flex items-center gap-3">
                   {previewUrl && (
                     <img 
@@ -1094,6 +1143,31 @@ export default function FlowerSelectPage() {
                 </div>
               </div>
 
+              {/* 확대용 이미지 업로드 */}
+              <div>
+                <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">🌱꽃 <strong className="font-bold text-blue-500">확대 이미지</strong> 업로드</label>
+                <div className="flex items-center gap-3">
+                  {previewUrlLarge && (
+                    <img 
+                      src={previewUrlLarge} 
+                      alt="미리보기" 
+                      className="w-12 h-12 rounded-xl object-cover border border-stone-200 shrink-0" 
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setLargeImageFile(file);
+                        setPreviewUrlLarge(URL.createObjectURL(file)); // 로컬 미리보기 생성
+                      }
+                    }}
+                    className="w-full text-[11px] text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100 cursor-pointer"
+                  />
+                </div>
+              </div>
               <button
                 type="submit"
                 disabled={isSubmitting}
