@@ -733,34 +733,33 @@ export default function FlowerSelectPage() {
                     
                     {/* 우측 액션 버튼 영역 (즐겨찾기 + 관리자용 수정 버튼) */}
                     <div className="flex items-center gap-1 shrink-0 ml-1.5">
-                      {/* 관리자의 경우에만 노출되는 수정/삭제 버튼 */}
-                      {isSuManager && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenEditModal(flower); // 수정 모달 오픈 함수
-                            }}
-                            className="w-6 h-6 rounded-full bg-stone-50 hover:bg-blue-50 text-stone-400 hover:text-blue-500 flex items-center justify-center transition cursor-pointer"
-                            title="꽃 정보 수정"
-                          >
-                            <span className="text-[10px] font-bold">수정</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteFlower(flower.id, flower.name, flower.image_url, flower.large_image_url);
-                            }}
-                            className="w-6 h-6 rounded-full bg-stone-50 hover:bg-rose-50 text-stone-400 hover:text-rose-500 flex items-center justify-center transition cursor-pointer"
-                            title="꽃 정보 삭제"
-                          >
-                            <span className="text-[10px] font-bold">삭제</span>
-                          </button>
-                        </>
+                    {/* 관리자의 경우에만 노출되는 수정/삭제 버튼 - 관리자는 수정/삭제 노출, 길드장부길드장 수정만 노출*/}
+                    {(isSuManager || isManager) && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEditModal(flower); // 수정 모달 오픈 함수
+                          }}
+                          className="w-6 h-6 rounded-full bg-stone-50 hover:bg-blue-50 text-stone-400 hover:text-blue-500 flex items-center justify-center transition cursor-pointer"
+                          title="꽃 정보 수정"
+                        >
+                          <span className="text-[10px] font-bold">수정</span>
+                        </button>
                       )}
-
+                      {isSuManager && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteFlower(flower.id, flower.name, flower.image_url, flower.large_image_url);
+                        }}
+                        className="w-6 h-6 rounded-full bg-stone-50 hover:bg-rose-50 text-stone-400 hover:text-rose-500 flex items-center justify-center transition cursor-pointer"
+                        title="꽃 정보 삭제"
+                      >
+                        <span className="text-[10px] font-bold">삭제</span>
+                      </button>
+                      )}
                       <button
                         type="button"
                         onClick={(e) => {
