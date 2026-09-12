@@ -1004,7 +1004,7 @@ export default function GuildTasksPage() {
                       const baseScore = flower.score || 0;
                       const extraScore = item.extra_score || 0;
                       const totalScore = baseScore + extraScore;
-
+                      const useDiaScore = (baseScore * 2) + extraScore; 
                       return (
                         <div key={item.id} className="py-2 px-1 border-b border-stone-100 flex items-center justify-between gap-2.5">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -1034,8 +1034,8 @@ export default function GuildTasksPage() {
                                 <span className="text-xs font-bold text-stone-900 truncate">{flower.name}</span>
                               </div>
                               <p className="text-[11px] text-amber-800/80 font-medium mt-0.5">
-                                합산: <span className="font-extrabold text-amber-900">{totalScore}점</span> 
-                                <span className="text-stone-400 text-[11px] ml-1 font-normal">기본: {baseScore}</span>
+                                기본: <span className="font-extrabold text-amber-900">{totalScore} /</span> 
+                                💎: <span className="font-extrabold text-purple-900">{useDiaScore}</span>
                               </p>
                             </div>
                           </div>

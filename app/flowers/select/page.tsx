@@ -8,6 +8,7 @@ import {
   FaTimes, FaSlidersH, FaSortAmountDown, FaSortAmountUp, FaTrashAlt, FaChevronDown, FaExclamationCircle,
   FaListAlt, FaCheckCircle, FaTimesCircle, FaSpinner
 } from 'react-icons/fa';
+import { Flower } from 'lucide-react';
 
 // ----------------------------------------------------------------------
 // [등급 & 상태 스타일 정의]
@@ -941,7 +942,7 @@ export default function FlowerSelectPage() {
 
             <div className="space-y-2 pt-0.5">
               <h3 className="text-[11px] font-bold text-stone-800 flex items-center gap-1 ml-0.5">
-                <span>👑 이 꽃을 보유한 길드원 ({filteredFlowerMembers.length}명)</span>
+                <span>👑 ‘{selectedFlower.name}’을 보유한 길드원 ({filteredFlowerMembers.length}명)</span>
               </h3>
 
               {isModalLoading ? (
@@ -957,7 +958,8 @@ export default function FlowerSelectPage() {
                 filteredFlowerMembers.map((item) => {
                   const baseScore = selectedFlower.score || 0;
                   const extraScore = item.extra_score ?? 0;
-                  const totalScore = baseScore + extraScore; 
+                  const totalBaseScore = baseScore + extraScore;
+                  const useDiaScore = (baseScore * 2) + extraScore; 
                   const memberStatus = item.profiles?.mission_status || '진행';
                   const memberNickname = item.profiles?.nickname || '알 수 없음';
                   return (
@@ -968,7 +970,7 @@ export default function FlowerSelectPage() {
                           <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border shrink-0 ${getStatusBadgeStyle(memberStatus)}`}>{memberStatus}</span>
                         </div>
                         <p className="text-[10px] text-amber-800/80 font-medium">
-                          임무 총 점수: <span className="font-extrabold text-amber-900 text-xs">{totalScore}점</span> 
+                          기본: <span className="font-extrabold text-amber-900 text-xxs">{totalBaseScore}점, </span>💎: <span className="font-extrabold text-purple-700 text-xxs">{useDiaScore}점</span> 
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
