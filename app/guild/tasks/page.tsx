@@ -1034,7 +1034,7 @@ export default function GuildTasksPage() {
                                 <span className="text-xs font-bold text-stone-900 truncate">{flower.name}</span>
                               </div>
                               <p className="text-[11px] text-amber-800/80 font-medium mt-0.5">
-                                기본: <span className="font-extrabold text-amber-900">{totalScore} /</span> 
+                                기본: <span className="font-extrabold text-amber-900">{totalScore}, </span> 
                                 💎: <span className="font-extrabold text-purple-900">{useDiaScore}</span>
                               </p>
                             </div>

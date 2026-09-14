@@ -54,14 +54,17 @@ export default function FlowerSelectPage() {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
   
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   const [selectedFlower, setSelectedFlower] = useState<any | null>(null);
   const [flowerMembers, setFlowerMembers] = useState<any[]>([]);
   const [modalMemberSearch, setModalMemberSearch] = useState('');
   const [modalMemberSuggestions, setModalMemberSuggestions] = useState<any[]>([]);
   const [modalStatusFilter, setModalStatusFilter] = useState<string>('ALL');
-
+  
+  // 1열/2열 보기 상태 정의 (기본값은 2열: false)
+  const [isSingleColumn, setIsSingleColumn] = useState(false);
+  
   /**꽃 확대 보기 모달 */
   const [previewImageModal, setPreviewImageModal] = useState<string | null>(null);
   const [guildMembers, setGuildMembers] = useState<any[]>([]);
@@ -539,13 +542,13 @@ export default function FlowerSelectPage() {
         <div className="px-3 pt-1.5 space-y-2">
           <div className="flex justify-between items-center px-1">
             <button 
-              onClick={() => setIsFilterOpen(!isFilterOpen)} 
+              onClick={() => setIsFilterOpen(isFilterOpen)} 
               className="flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-pink-500 transition cursor-pointer select-none"
             >
               <span className="w-5 h-5 rounded-lg bg-pink-100/80 text-pink-500 flex items-center justify-center text-[10px]">
                 <FaSlidersH />
               </span>
-              <span>{isFilterOpen ? '숨기기' : '검색 옵션 추가'}</span>
+              <span>{isFilterOpen ? '숨기기' : '검색 옵션'}</span>
               <span className={`text-stone-400 text-[10px] transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`}>
                 <FaChevronDown />
               </span>
@@ -555,12 +558,20 @@ export default function FlowerSelectPage() {
               <span className="text-[11px] font-bold text-pink-600 bg-pink-50/80 px-2 py-0.5 rounded-md border border-pink-100">
                 {displayedFlowersList.length}개
               </span>
+              {/* ✨ 새로 추가된 1열/2열 보기 토글 버튼 */}
+              <button
+                type="button"
+                onClick={() => setIsSingleColumn(!isSingleColumn)}
+                className="px-1.5 py-0.5 bg-pink-100 hover:bg-pink-200 text-red-700 rounded-lg font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
+              >
+                {isSingleColumn ? '2열' : '1열'}
+              </button>
               <button
                 onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/80 border border-stone-200/80 text-stone-600 hover:bg-stone-100 transition text-[11px] font-semibold cursor-pointer shadow-2xs"
               >
                 {sortOrder === 'desc' ? <FaSortAmountDown className="text-amber-500 text-[10px]" /> : <FaSortAmountUp className="text-amber-500 text-[10px]" />}
-                <span>{sortOrder === 'desc' ? '내림차순' : '오름차순'}</span>
+                <span>{sortOrder === 'desc' ? '정렬' : '정렬'}</span>
               </button>
               {/* 관리자,길드장,부길드장,임원 꽃 등록 버튼 노출 */}
               {(isSuManager || isManager) && (
@@ -685,7 +696,7 @@ export default function FlowerSelectPage() {
               <span>검색 결과가 없습니다.</span>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid gap-2 ${isSingleColumn ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {displayedFlowersList.map((flower) => {
                 const isFavorite = favoriteFlowersList.some(fav => fav.id === flower.id);
 
@@ -693,7 +704,7 @@ export default function FlowerSelectPage() {
                   <div
                     key={flower.id}
                     onClick={() => { setSelectedFlower(flower); fetchFlowerMembers(flower.id); }}
-                    className="bg-white p-2.5 rounded-2xl border border-stone-200/80 shadow-[0_2px_6px_rgba(0,0,0,0.02)] flex items-center justify-between cursor-pointer hover:border-pink-300 hover:shadow-md transition group relative"
+                    className="bg-white p-2 rounded-2xl border border-stone-200/80 shadow-[0_2px_6px_rgba(0,0,0,0.02)] flex items-center justify-between gap-2 cursor-pointer hover:border-pink-300 hover:shadow-md transition group relative"
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div 
@@ -723,7 +734,7 @@ export default function FlowerSelectPage() {
                             {flower.grade}
                           </span>
                           <span className="text-[10px] text-amber-900 font-bold bg-amber-50/80 px-1.5 py-0.2 rounded border border-amber-100/60">
-                            {flower.score || 0}점
+                            {flower.score || 0}
                           </span>
                         </div>
                         <h3 className="text-xs font-bold text-stone-900 truncate tracking-tight" title={flower.name}>
@@ -742,7 +753,7 @@ export default function FlowerSelectPage() {
                             e.stopPropagation();
                             handleOpenEditModal(flower); // 수정 모달 오픈 함수
                           }}
-                          className="w-6 h-6 rounded-full bg-stone-50 hover:bg-blue-50 text-stone-400 hover:text-blue-500 flex items-center justify-center transition cursor-pointer"
+                          className="w-6 h-6 rounded-full bg-blue-50 hover:bg-purple-50 text-blue-500 hover:text-rose-500 flex items-center justify-center transition cursor-pointer"
                           title="꽃 정보 수정"
                         >
                           <span className="text-[10px] font-bold">수정</span>
@@ -755,7 +766,7 @@ export default function FlowerSelectPage() {
                           e.stopPropagation();
                           handleDeleteFlower(flower.id, flower.name, flower.image_url, flower.large_image_url);
                         }}
-                        className="w-6 h-6 rounded-full bg-stone-50 hover:bg-rose-50 text-stone-400 hover:text-rose-500 flex items-center justify-center transition cursor-pointer"
+                        className="w-6 h-6 rounded-full bg-yellow-100 hover:bg-red-100 text-red-900 hover:text-rose-500 flex items-center justify-center transition cursor-pointer"
                         title="꽃 정보 삭제"
                       >
                         <span className="text-[10px] font-bold">삭제</span>
