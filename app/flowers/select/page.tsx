@@ -542,7 +542,7 @@ export default function FlowerSelectPage() {
         <div className="px-3 pt-1.5 space-y-2">
           <div className="flex justify-between items-center px-1">
             <button 
-              onClick={() => setIsFilterOpen(isFilterOpen)} 
+              onClick={() => setIsFilterOpen(!isFilterOpen)} 
               className="flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-pink-500 transition cursor-pointer select-none"
             >
               <span className="w-5 h-5 rounded-lg bg-pink-100/80 text-pink-500 flex items-center justify-center text-[10px]">
