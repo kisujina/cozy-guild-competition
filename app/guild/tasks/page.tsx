@@ -961,7 +961,7 @@ export default function GuildTasksPage() {
                 <div className="space-y-1.5 pt-1">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-stone-800 ml-1">
-                      등록된 보유 꽃 목록 ({filteredMemberFlowers.length}/{memberFlowers.length}개)
+                      현재 보유 꽃 : ( {filteredMemberFlowers.length}  /  {memberFlowers.length} )
                     </h4>
                   </div>
 

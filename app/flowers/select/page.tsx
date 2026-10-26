@@ -1143,8 +1143,9 @@ export default function FlowerSelectPage() {
                 </div>
               </div>
 
+              
               {/* 리스트용 이미지 업로드 */}
-              <div>
+              {/* <div>
                 <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">🌱꽃 <strong className="font-bold text-purple-500">리스트 이미지</strong> 업로드</label>
                 <div className="flex items-center gap-3">
                   {previewUrl && (
@@ -1167,10 +1168,10 @@ export default function FlowerSelectPage() {
                     className="w-full text-[11px] text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100 cursor-pointer"
                   />
                 </div>
-              </div>
+              </div> */}
 
               {/* 확대용 이미지 업로드 */}
-              <div>
+              {/* <div>
                 <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">🌱꽃 <strong className="font-bold text-blue-500">확대 이미지</strong> 업로드</label>
                 <div className="flex items-center gap-3">
                   {previewUrlLarge && (
@@ -1193,7 +1194,8 @@ export default function FlowerSelectPage() {
                     className="w-full text-[11px] text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100 cursor-pointer"
                   />
                 </div>
-              </div>
+              </div> */}
+              
               <button
                 type="submit"
                 disabled={isSubmitting}

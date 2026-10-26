@@ -189,7 +189,7 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                   <span className="inline-block px-2 py-0.5 bg-[#e8deff] text-[#6e56cf] text-xs font-semibold rounded-md mb-1">
                     UPDATE
                   </span>
-                  <h3 className="font-bold text-stone-900 mb-1">주요 업데이트 안내</h3>
+                  <h3 className="font-bold text-stone-900 mb-1">주요 변경 사항</h3>
                   <p className="whitespace-nowrap text-stone-600 text-xs">
                     아래 변경된 내용을 확인해 주세요.🫶
                   </p>
@@ -197,32 +197,23 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
 
                 <div className="space-y-2">
                   <h4 className="font-bold text-xs text-[#6e56cf] uppercase tracking-wider flex items-center gap-1">
-                    <span>✨ 추가된 사항</span>
+                    <span>✨ 변경 사항</span>
                   </h4>
+                 
                   <ul className="space-y-1.5 pl-1 text-xs">
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>길드장/부길드장 권한에 한하여 <strong>[신규 꽃 등록]</strong> 기능 추가</span>
+                      <span>보다 안정적인 서비스 환경을 유지하기 위한 서버 관리 정책에 따라, 아쉽게도 이미지 등록 및 수정 기능 지원을 종료하게 되었습니다.</span>
                     </li>
                   </ul>
-                  <ul className="space-y-1.5 pl-1 text-xs">
+
+                   <ul className="space-y-1.5 pl-1 text-xs">
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span><strong>[신규 꽃 등록]</strong>시 꽃 이미지 업로드 기능 추가</span>
+                      <span>기존에 등록해 주신 이미지는 손실 없이 확인하실 수 있도록 별도로 안전하게 이전될 예정입니다.</span>
                     </li>
                   </ul>
-                  <ul className="space-y-1.5 pl-1 text-xs">
-                    <li className="flex items-start gap-2">
-                      <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>꽃 이미지 <strong>클릭/터치</strong> 시 이미지 크게 보기 기능 추가</span>
-                    </li>
-                  </ul>
-                  <ul className="space-y-1.5 pl-1 text-xs">
-                    <li className="flex items-start gap-2">
-                      <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>꽃 <strong>수정&삭제</strong> 관련 문의가 생길 경우 편하게 문의 주세요!🤗</span>
-                    </li>
-                  </ul>
+                
                 </div>
 
                 {/* <div className="space-y-2 pt-1 border-t border-stone-200/40">
