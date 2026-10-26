@@ -203,14 +203,14 @@ export default function NavigationLayout({ children }: { children: React.ReactNo
                   <ul className="space-y-1.5 pl-1 text-xs">
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>보다 안정적인 서비스 환경을 유지하기 위한 서버 관리 정책에 따라, 아쉽게도 이미지 등록 및 수정 기능 지원을 종료하게 되었습니다.</span>
+                      <span>최근 이용 중인 데이터베이스 플랫폼의 무료 사용량 초과 및 추가 비용 발생 문제로 인해, 부득이하게 이미지 등록 및 수정 기능 지원을 마무리하게 되었습니다.</span>
                     </li>
                   </ul>
 
                    <ul className="space-y-1.5 pl-1 text-xs">
                     <li className="flex items-start gap-2">
                       <span className="text-[#9b87f5] font-bold">•</span>
-                      <span>기존에 등록해 주신 이미지는 손실 없이 확인하실 수 있도록 별도로 안전하게 이전될 예정입니다.</span>
+                      <span>신규 꽃 등록 시에 이미지는 등록할 수 없으며, 이후에 이미지는 별도로 추가되어 관리 될 수 있는 점 공지 드립니다.</span>
                     </li>
                   </ul>
                 
