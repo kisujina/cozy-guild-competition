@@ -370,7 +370,7 @@ export default function FlowerSelectPage() {
   };
 
   const handleDeleteFlower = async (flowerId: number, flowerName: string, imageUrl: string, largeImageUrl: string) => {
-    if (!window.confirm(`'${flowerName}' ⚠️꽃 정보를 정말 삭제하시겠습니까? 관련 데이터는 복구 할 수 없습니다.`)) return;
+    if (!window.confirm(`'${flowerName}' ⚠️꽃 정보를 정말 삭제하시겠습니까? 이미지와 데이터 모두 완전히 삭제되며, 관련 데이터는 복구 할 수 없습니다.`)) return;
    
     try {
         // 1. 이미지 URL이 존재하고 Supabase Storage 주소인 경우 파일명 추출 후 스토리지에서 삭제
@@ -425,7 +425,7 @@ export default function FlowerSelectPage() {
 
         if (dbError) throw dbError;
 
-        alert('꽃 정보가 성공적으로 삭제되었습니다.');
+        alert('꽃 정보와 이미지가 성공적으로 삭제되었습니다.');
       
       // ⭐ [핵심] 삭제 직후 리스트를 다시 불러와 화면을 즉시 갱신합니다!
       await fetchFlowersByQuery();
@@ -1143,7 +1143,6 @@ export default function FlowerSelectPage() {
                 </div>
               </div>
 
-              
               {/* 리스트용 이미지 업로드 */}
               {/* <div>
                 <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">🌱꽃 <strong className="font-bold text-purple-500">리스트 이미지</strong> 업로드</label>
@@ -1169,7 +1168,6 @@ export default function FlowerSelectPage() {
                   />
                 </div>
               </div> */}
-
               {/* 확대용 이미지 업로드 */}
               {/* <div>
                 <label className="block font-bold text-stone-500 mb-1.5 ml-0.5">🌱꽃 <strong className="font-bold text-blue-500">확대 이미지</strong> 업로드</label>
@@ -1195,7 +1193,6 @@ export default function FlowerSelectPage() {
                   />
                 </div>
               </div> */}
-              
               <button
                 type="submit"
                 disabled={isSubmitting}
